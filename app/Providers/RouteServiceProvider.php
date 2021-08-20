@@ -38,7 +38,7 @@ class RouteServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         $this->routes(function () {
-            Route::prefix('api')
+            Route::prefix('api/V1')
                 ->middleware('api')
                 ->namespace($this->namespace)
                 ->group(base_path('routes/api.php'));
@@ -53,6 +53,8 @@ class RouteServiceProvider extends ServiceProvider
      * Configure the rate limiters for the application.
      *
      * @return void
+     *
+     * @psalm-suppress PossiblyNullArgument
      */
     protected function configureRateLimiting()
     {

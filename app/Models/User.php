@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Passport\HasApiTokens;
 
+/** @psalm-suppress PropertyNotSetInConstructor */
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use Notifiable;
+    use HasApiTokens;
 
     /**
      * The attributes that are mass assignable.
@@ -40,4 +44,13 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    public function setPasswordAttribute(string $value): string
+    {
+        return $this->attributes['password'] = Hash::needsRehash($value) ? Hash::make($value) : $value;
+    }
 }

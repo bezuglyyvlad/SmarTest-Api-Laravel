@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\V1\TestCategoryController;
+use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Laravel\Passport\Http\Controllers\AccessTokenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +17,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::post('oauth/token', [AccessTokenController::class, 'issueToken'])
+    ->middleware(['oauth:password']);
+Route::post('oauth/token/refresh', [AccessTokenController::class, 'issueToken'])
+    ->middleware(['oauth:refresh_token']);
+
+Route::post('users/logout', [UserController::class, 'logout']);
+Route::apiResource('users', UserController::class)->except('index');
+
+Route::apiResource('test-categories', TestCategoryController::class)->middleware(['auth:api']);

@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateUsersTable extends Migration
+class CreateTestCategoriesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -15,14 +15,16 @@ class CreateUsersTable extends Migration
      */
     public function up()
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('test_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+            $table->string('title')->unique();
+            $table->unsignedBigInteger('parent_id')->default(0);
+
             $table->timestamps();
+
+            /** @phpstan-ignore-next-line */
+            $table->foreignId('user_id')->nullable()->constrained()
+                ->onUpdate('cascade')->onDelete('set null');
         });
     }
 
@@ -33,6 +35,6 @@ class CreateUsersTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('test_categories');
     }
 }

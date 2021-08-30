@@ -7,10 +7,14 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Passport\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
-/** @psalm-suppress PropertyNotSetInConstructor */
+/**
+ * @psalm-suppress PropertyNotSetInConstructor
+ */
 class User extends Authenticatable
 {
+    use HasRoles;
     use HasFactory;
     use Notifiable;
     use HasApiTokens;

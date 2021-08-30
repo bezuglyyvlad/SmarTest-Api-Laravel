@@ -1,6 +1,5 @@
 <?php
-
-namespace Database\Migrations;
+// phpcs:ignoreFile
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @psalm-suppress PropertyNotSetInConstructor
  */
-class TestCategory extends Model
+class Answer extends Model
 {
     use HasFactory;
 }

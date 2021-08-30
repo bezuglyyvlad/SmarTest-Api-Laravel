@@ -23,7 +23,7 @@ class UserController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api')->only(['show', 'update', 'destroy', 'logout']);
+        $this->middleware('auth:api')->except(['store']);
         $this->middleware(function (Request $request, Closure $next) {
             /** @phpstan-ignore-next-line */
             if ($request->user->id !== Auth::id()) {

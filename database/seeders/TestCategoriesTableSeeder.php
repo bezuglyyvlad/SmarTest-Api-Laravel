@@ -2,10 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-/** @psalm-suppress MissingConstructor */
 class TestCategoriesTableSeeder extends Seeder
 {
     /**
@@ -16,13 +17,17 @@ class TestCategoriesTableSeeder extends Seeder
     public function run()
     {
         $categories = [];
+        /** @phpstan-ignore-next-line */
+        $countOfUsers = User::count();
 
         for ($i = 1; $i <= 50; $i++) {
-            $title = 'Категория №' . $i;
             $categories[] = [
-                'title' => $title,
+                'title' => 'Категорія №' . $i,
                 'parent_id' => rand(0, $i - 1),
-                'user_id' => rand(1, 10),
+                'created_at' => Carbon::now()->modify('-1 month'),
+                'updated_at' => Carbon::now()->modify('-10 day'),
+                'deleted_at' => !($i % 10) ? Carbon::now()->modify('-5 day') : null,
+                'user_id' => rand(1, $countOfUsers),
             ];
         }
 

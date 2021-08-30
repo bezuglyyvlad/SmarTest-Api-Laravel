@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-/** @psalm-suppress MissingConstructor */
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -16,6 +15,14 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         User::factory(10)->create();
-        $this->call(TestCategoriesTableSeeder::class);
+        $this->call([
+            TestCategoriesTableSeeder::class,
+            ExpertTestsTableSeeder::class,
+            TestsTableSeeder::class,
+            QuestionsTableSeeder::class,
+            AnswersTableSeeder::class,
+            TestResultsTableSeeder::class,
+            SpatieSeeder::class
+        ]);
     }
 }

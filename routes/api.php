@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\ExpertTestController;
 use App\Http\Controllers\Api\V1\TestCategoryController;
 use App\Http\Controllers\Api\V1\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 
@@ -26,3 +26,5 @@ Route::post('users/logout', [UserController::class, 'logout']);
 Route::apiResource('users', UserController::class)->except('index');
 
 Route::apiResource('test-categories', TestCategoryController::class)->middleware(['auth:api']);
+
+Route::apiResource('expert-tests', ExpertTestController::class)->middleware(['auth:api']);

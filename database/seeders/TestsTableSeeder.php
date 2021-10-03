@@ -18,14 +18,11 @@ class TestsTableSeeder extends Seeder
     public function run()
     {
         $tests = [];
-        /** @phpstan-ignore-next-line */
         $countOfUsers = User::count();
-        /** @phpstan-ignore-next-line */
         $countOfExpertTests = ExpertTest::count();
 
         for ($i = 1; $i <= 50; $i++) {
             $expert_test_id = rand(1, $countOfExpertTests);
-            /** @phpstan-ignore-next-line */
             $expert_test_time = ExpertTest::where('id', $expert_test_id)->first()->time;
             $floorDays = rand(1, 30);
             $tests[] = [

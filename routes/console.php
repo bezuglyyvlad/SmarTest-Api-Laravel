@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('inspire', function () {
     /**
-     * @phpstan-ignore-next-line
      * @psalm-suppress InvalidScope
      */
     $this->comment(Inspiring::quote());

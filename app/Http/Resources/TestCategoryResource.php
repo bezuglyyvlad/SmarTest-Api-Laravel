@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\TestCategory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Auth;
 
 class TestCategoryResource extends JsonResource
 {
@@ -15,15 +17,22 @@ class TestCategoryResource extends JsonResource
      */
     public function toArray($request): array
     {
+        $user = Auth::user();
+        /**
+         * @psalm-suppress PossiblyNullReference
+         * @psalm-suppress UndefinedInterfaceMethod
+         */
         return [
-            /** @phpstan-ignore-next-line */
             'id' => $this->id,
-            /** @phpstan-ignore-next-line */
             'title' => $this->title,
-            /** @phpstan-ignore-next-line */
             'parent_id' => $this->parent_id,
-            /** @phpstan-ignore-next-line */
-            'user_id' => $this->user_id,
+            'user' => $this->when(
+                $user->isAdmin() || $user->isExpert($this->id),
+                new UserResource($this->user)
+            ),
+            'has_children' => !!TestCategory::setParentKeyName('parent_id')::find($this->id)
+                ->children()
+                ->count(),
         ];
     }
 }

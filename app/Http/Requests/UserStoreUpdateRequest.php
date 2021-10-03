@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /** @psalm-suppress PropertyNotSetInConstructor */
-class UserStoreRequest extends FormRequest
+class UserStoreUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

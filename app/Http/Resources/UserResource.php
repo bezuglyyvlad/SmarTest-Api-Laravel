@@ -16,12 +16,10 @@ class UserResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            /** @phpstan-ignore-next-line */
             'id' => $this->id,
-            /** @phpstan-ignore-next-line */
             'name' => $this->name,
-            /** @phpstan-ignore-next-line */
             'email' => $this->email,
+            'roles' => $this->getRoleNames(),
         ];
     }
 }

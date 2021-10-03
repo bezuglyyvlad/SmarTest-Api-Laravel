@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UserStoreRequest;
+use App\Http\Requests\UserStoreUpdateRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Closure;
@@ -25,7 +25,6 @@ class UserController extends Controller
     {
         $this->middleware('auth:api')->except(['store']);
         $this->middleware(function (Request $request, Closure $next) {
-            /** @phpstan-ignore-next-line */
             if ($request->user->id !== Auth::id()) {
                 return response(['message' => "You don't have enough permission"], Response::HTTP_FORBIDDEN);
             }
@@ -36,15 +35,14 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param UserStoreRequest $request
+     * @param UserStoreUpdateRequest $request
      * @return UserResource
      */
-    public function store(UserStoreRequest $request): UserResource
+    public function store(UserStoreUpdateRequest $request): UserResource
     {
-        /** @phpstan-ignore-next-line */
-        $created_user = User::create($request->validated());
+        $createdUser = User::create($request->validated());
 
-        return new UserResource($created_user);
+        return new UserResource($createdUser);
     }
 
     /**
@@ -61,11 +59,11 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param UserStoreRequest $request
+     * @param UserStoreUpdateRequest $request
      * @param User $user
      * @return UserResource
      */
-    public function update(UserStoreRequest $request, User $user): UserResource
+    public function update(UserStoreUpdateRequest $request, User $user): UserResource
     {
         $user->update($request->validated());
 

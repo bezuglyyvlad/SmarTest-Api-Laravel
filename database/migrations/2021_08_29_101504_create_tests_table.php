@@ -19,7 +19,6 @@ class CreateTestsTable extends Migration
             $table->string('start_date');
             $table->string('finish_date');
 
-            /** @phpstan-ignore-next-line */
             $table->foreignId('user_id')->constrained()
                 ->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('expert_test_id')->constrained();

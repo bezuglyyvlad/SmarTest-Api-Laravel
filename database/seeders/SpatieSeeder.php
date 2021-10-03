@@ -18,7 +18,6 @@ class SpatieSeeder extends Seeder
         Role::create(['name' => 'expert']);
         $admin = Role::create(['name' => 'admin']);
 
-        /** @phpstan-ignore-next-line */
         User::find(1)->assignRole($admin);
     }
 }

@@ -19,7 +19,6 @@ class AnswersTableSeeder extends Seeder
     {
         $answers = [];
         $faker = Factory::create();
-        /** @phpstan-ignore-next-line */
         $countOfQuestions = Question::count();
 
         for ($i = 1; $i <= 5000; $i++) {

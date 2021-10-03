@@ -17,7 +17,6 @@ class ExpertTestsTableSeeder extends Seeder
     public function run()
     {
         $expertTests = [];
-        /** @phpstan-ignore-next-line */
         $countOfTestCategories = TestCategory::count();
 
         for ($i = 1; $i <= 50; $i++) {

@@ -21,7 +21,6 @@ class CreateTestResultsTable extends Migration
             $table->float('score')->default(0);
             $table->json('user_answer')->nullable();
 
-            /** @phpstan-ignore-next-line */
             $table->foreignId('test_id')->constrained()
                 ->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('question_id')->constrained();

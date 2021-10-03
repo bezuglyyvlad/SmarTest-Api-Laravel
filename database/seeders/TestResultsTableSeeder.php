@@ -18,16 +18,13 @@ class TestResultsTableSeeder extends Seeder
     public function run()
     {
         $testResults = [];
-        /** @phpstan-ignore-next-line */
         $countOfTests = Test::count();
-        /** @phpstan-ignore-next-line */
         $countOfQuestions = Question::count();
         $lastSerialNumbers = [];
 
         for ($i = 1; $i <= $countOfTests * 10; $i++) {
             $question_id = rand(1, $countOfQuestions);
             $test_id = rand(1, $countOfTests);
-            /** @phpstan-ignore-next-line */
             $user_answer = Answer::where('question_id', $question_id)
                 ->inRandomOrder()->limit(rand(1, 2))->pluck('id')->toJson();
             $lastSerialNumbers[$test_id] = array_key_exists($test_id, $lastSerialNumbers)

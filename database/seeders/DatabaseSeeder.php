@@ -16,13 +16,13 @@ class DatabaseSeeder extends Seeder
     {
         User::factory(10)->create();
         $this->call([
+            SpatieSeeder::class,
             TestCategoriesTableSeeder::class,
             ExpertTestsTableSeeder::class,
             TestsTableSeeder::class,
             QuestionsTableSeeder::class,
             AnswersTableSeeder::class,
             TestResultsTableSeeder::class,
-            SpatieSeeder::class
         ]);
     }
 }

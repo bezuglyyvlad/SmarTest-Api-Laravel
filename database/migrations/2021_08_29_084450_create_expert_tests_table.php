@@ -22,7 +22,7 @@ class CreateExpertTestsTable extends Migration
             $table->boolean('is_published')->default(false);
 
             $table->boolean('active_record')->default(true);
-            $table->unsignedInteger('modified_records_parent_id')->default(0);
+            $table->unsignedBigInteger('modified_records_parent_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

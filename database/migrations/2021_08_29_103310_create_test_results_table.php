@@ -17,9 +17,10 @@ class CreateTestResultsTable extends Migration
         Schema::create('test_results', function (Blueprint $table) {
             $table->id();
             $table->integer('serial_number');
-            $table->boolean('correct_answer')->default(false);
-            $table->float('score')->default(0);
+            $table->boolean('is_correct_answer')->default(false);
+            $table->float('score', 7, 4)->default(0);
             $table->json('user_answer')->nullable();
+            $table->json('answer_ids');
 
             $table->foreignId('test_id')->constrained()
                 ->onUpdate('cascade')->onDelete('cascade');

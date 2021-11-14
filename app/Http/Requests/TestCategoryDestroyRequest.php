@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,6 @@ class TestCategoryDestroyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $user = Auth::user();
         // active record and admin or this category expert
         /**
          * @psalm-suppress PossiblyNullPropertyFetch
@@ -24,7 +24,7 @@ class TestCategoryDestroyRequest extends FormRequest
          * @psalm-suppress PossiblyNullReference
          */
         return $this->route('test_category')->active_record === 1
-            && ($user->isAdmin() || $user->isExpert($this->route('test_category')->id));
+            && ((User::isAdmin() && !$this->parent_id) || User::isExpert($this->test_category->id));
     }
 
     /**

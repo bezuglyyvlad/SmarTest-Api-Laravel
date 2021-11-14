@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -16,7 +17,6 @@ class TestCategoryUpdateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        $user = Auth::user();
         // active record and admin or this category expert
         // or parent_id ancestor expert (if move to not your category)
         /**
@@ -27,11 +27,24 @@ class TestCategoryUpdateRequest extends FormRequest
          */
         return $this->route('test_category')->active_record === 1
             && (
-                $user->isAdmin()
-                || $user->isExpert($this->route('test_category')->id)
+                (User::isAdmin() && !$this->parent_id)
+                || User::isExpert($this->test_category->id)
                 || $this->parent_id
-                && $user->isExpert($this->parent_id)
+                && User::isExpert($this->parent_id)
             );
+    }
+
+    /**
+     * @return string[]
+     */
+    public function messages(): array
+    {
+        return [
+            'title.unique' => 'Ця назва вже зайнята.',
+            'user_email.exists' =>
+                'Вибрана електронна адреса
+                користувача недійсна.'
+        ];
     }
 
     /**

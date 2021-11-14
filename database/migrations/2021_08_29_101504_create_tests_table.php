@@ -18,10 +18,13 @@ class CreateTestsTable extends Migration
             $table->id();
             $table->string('start_date');
             $table->string('finish_date');
+            $table->float('score', 7, 4)->default(0);
+            $table->float('max_score', 7, 4)->default(0);
 
             $table->foreignId('user_id')->constrained()
                 ->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('expert_test_id')->constrained();
+            $table->foreignId('test_category_id')->constrained();
         });
     }
 

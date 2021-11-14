@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 /** @psalm-suppress PropertyNotSetInConstructor */
 class UserStoreUpdateRequest extends FormRequest
@@ -18,6 +20,16 @@ class UserStoreUpdateRequest extends FormRequest
     }
 
     /**
+     * @return string[]
+     */
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'Ця електронна адреса вже зайнята.'
+        ];
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array
@@ -25,9 +37,12 @@ class UserStoreUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:5|confirmed',
+            'name' => 'required|string|min:2|max:255',
+            'email' => [
+                'required', 'string', 'email', 'max:255',
+                Rule::unique('users')->ignore(Auth::id())
+            ],
+            'password' => 'required|string|min:6|max:255|confirmed',
         ];
     }
 }

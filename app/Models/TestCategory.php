@@ -27,7 +27,7 @@ class TestCategory extends Model
     /**
      * @return string
      */
-    public function getParentKeyName()
+    public function getParentKeyName(): string
     {
         return static::$parentKey;
     }
@@ -51,7 +51,7 @@ class TestCategory extends Model
     {
         return [
             [
-                'name' => 'breadcrumbs',
+                'name' => 'custom_path',
                 'column' => 'title',
                 'separator' => '/',
             ],
@@ -67,13 +67,13 @@ class TestCategory extends Model
     }
 
     /**
-     * @param int $categoryId
+     * @param int $testCategoryId
      * @return bool
      */
-    public static function ancestorsCategoryDeleted(int $categoryId): bool
+    public static function ancestorsCategoryDeleted(int $testCategoryId): bool
     {
         return !!TestCategory::setParentKeyName('parent_id')
-            ->findOrFail($categoryId)
+            ->findOrFail($testCategoryId)
             ->ancestors()
             ->where('deleted_at', '!=', null)->get()
             ->count();

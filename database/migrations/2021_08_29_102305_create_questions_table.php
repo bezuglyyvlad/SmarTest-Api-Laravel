@@ -17,7 +17,7 @@ class CreateQuestionsTable extends Migration
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->text('text');
-            $table->integer('lvl');
+            $table->float('quality_coef', 17, 16);
             $table->integer('type');
             $table->text('description')->nullable();
             $table->string('image')->nullable();

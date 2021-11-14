@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ExpertTest;
+use App\Models\TestCategory;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -23,13 +24,16 @@ class TestsTableSeeder extends Seeder
 
         for ($i = 1; $i <= 50; $i++) {
             $expert_test_id = rand(1, $countOfExpertTests);
-            $expert_test_time = ExpertTest::where('id', $expert_test_id)->first()->time;
-            $floorDays = rand(1, 30);
+            $subDays = rand(1, 30);
             $tests[] = [
-                'start_date' => Carbon::now()->floorDays($floorDays),
-                'finish_date' => Carbon::now()->floorDays($floorDays)->addMinutes((int)($expert_test_time * 0.8)),
+                'start_date' => Carbon::now()->subDays($subDays)->toIso8601String(),
+                'finish_date' => Carbon::now()
+                    ->subDays($subDays)
+                    ->addHour()
+                    ->toIso8601String(),
                 'user_id' => rand(1, $countOfUsers),
-                'expert_test_id' => $expert_test_id
+                'expert_test_id' => $expert_test_id,
+                'test_category_id' => ExpertTest::findOrFail($expert_test_id)->test_category_id
             ];
         }
 

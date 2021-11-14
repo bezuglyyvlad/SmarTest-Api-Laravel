@@ -33,6 +33,16 @@ class UserController extends Controller
     }
 
     /**
+     * Display the specified resource.
+     *
+     * @return UserResource
+     */
+    public function index(): UserResource
+    {
+        return new UserResource(Auth::user());
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param UserStoreUpdateRequest $request

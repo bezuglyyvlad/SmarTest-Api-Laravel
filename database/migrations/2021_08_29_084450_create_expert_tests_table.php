@@ -17,8 +17,6 @@ class CreateExpertTestsTable extends Migration
         Schema::create('expert_tests', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->integer('time');
-            $table->integer('number_of_questions');
             $table->boolean('is_published')->default(false);
 
             $table->boolean('active_record')->default(true);

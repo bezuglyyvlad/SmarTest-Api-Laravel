@@ -63,7 +63,7 @@ class User extends Authenticatable
     /**
      * @return bool
      */
-    public function isAdmin(): bool
+    public static function isAdmin(): bool
     {
         /**
          * @psalm-suppress PossiblyNullReference
@@ -73,10 +73,10 @@ class User extends Authenticatable
     }
 
     /**
-     * @param int $categoryId
+     * @param int $testCategoryId
      * @return bool
      */
-    public function isExpert(int $categoryId): bool
+    public static function isExpert(int $testCategoryId): bool
     {
         /**
          * @psalm-suppress PossiblyNullReference
@@ -84,6 +84,7 @@ class User extends Authenticatable
          */
         return !!Auth::user()->hasRole('expert')
             && TestCategory::setParentKeyName('parent_id')
+                ->findOrFail($testCategoryId)
                 ->ancestorsAndSelf()
                 ->where('user_id', Auth::id())
                 ->count();

@@ -2,9 +2,18 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Helpers\TestHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ExpertTestDestroyRequest;
+use App\Http\Requests\ExpertTestStoreRequest;
+use App\Http\Requests\ExpertTestUpdateRequest;
 use App\Http\Resources\ExpertTestCollection;
+use App\Http\Resources\ExpertTestResource;
+use App\Http\Resources\TestCategoryResource;
 use App\Models\ExpertTest;
+use App\Models\Question;
+use App\Models\Test;
+use Carbon\Carbon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
@@ -33,12 +42,14 @@ class ExpertTestController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param Request $request
-     * @return Application|ResponseFactory|\Illuminate\Http\Response
+     * @param ExpertTestStoreRequest $request
+     * @return ExpertTestResource
      */
-    public function store(Request $request)
+    public function store(ExpertTestStoreRequest $request): ExpertTestResource
     {
-        return response(null, Response::HTTP_NOT_FOUND);
+        $createdExpertTest = ExpertTest::create($request->validated());
+
+        return new ExpertTestResource($createdExpertTest);
     }
 
     /**
@@ -55,23 +66,79 @@ class ExpertTestController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param Request $request
-     * @param int $id
-     * @return Application|ResponseFactory|\Illuminate\Http\Response
+     * @param ExpertTestUpdateRequest $request
+     * @param ExpertTest $expertTest
+     * @return ExpertTestResource
+     * @throws \Illuminate\Validation\ValidationException
      */
-    public function update(Request $request, $id)
+    public function update(ExpertTestUpdateRequest $request, ExpertTest $expertTest)
     {
-        return response(null, Response::HTTP_NOT_FOUND);
+        $validatedExpertTest = $request->validated();
+        $replicatedOldData = $expertTest->replicate();
+        $newExpertTest = $expertTest->replicate();
+
+        // if the data not changed, return the old resource
+        if ($newExpertTest->fill($validatedExpertTest) == $replicatedOldData) {
+            return new ExpertTestResource($expertTest);
+        }
+
+        $onlyIsPublishedChanged = self::onlyIsPublishedChanged($replicatedOldData, $newExpertTest);
+        $activeTestId = ExpertTestUpdateRequest::validateExpertTestId($expertTest->id, $onlyIsPublishedChanged);
+
+        // deactivate old resource
+        $expertTest->active_record = false;
+        $expertTest->is_published = false;
+        $expertTest->save();
+
+        // create link for history records
+        $newExpertTest->modified_records_parent_id = $expertTest->id;
+        $newExpertTest->save();
+
+        // update test_category_id in Question table
+        Question::where('expert_test_id', $expertTest->id)
+            ->update(['expert_test_id' => $newExpertTest->id]);
+
+        // update test_category_id in Test table if only is published changed
+        if ($onlyIsPublishedChanged) {
+            Test::whereIn('id', $activeTestId)->update(['expert_test_id' => $newExpertTest->id]);
+        }
+
+        return new ExpertTestResource($newExpertTest);
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
+     * @param ExpertTestDestroyRequest $request
+     * @param ExpertTest $expertTest
      * @return Application|ResponseFactory|\Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(ExpertTestDestroyRequest $request, ExpertTest $expertTest)
     {
-        return response(null, Response::HTTP_NOT_FOUND);
+        $expertTest->deleted_at = Carbon::now();
+        $expertTest->active_record = false;
+        $expertTest->is_published = false;
+        $expertTest->save();
+
+        return response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @param ExpertTest $oldExpertTest
+     * @param ExpertTest $newExpertTest
+     * @return bool
+     */
+    public static function onlyIsPublishedChanged(ExpertTest $oldExpertTest, ExpertTest $newExpertTest): bool
+    {
+        $newExpertTest = array_map(
+            function ($value) {
+                return is_numeric($value) ? (int)$value : $value;
+            },
+            $newExpertTest->toArray()
+        );
+
+        $differences = array_diff_assoc($oldExpertTest->toArray(), $newExpertTest);
+
+        return count($differences) === 1 && array_key_exists('is_published', $differences);
     }
 }

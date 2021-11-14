@@ -1,4 +1,5 @@
 <?php
+// phpcs:ignoreFile
 
 namespace App\Http\Controllers\Api\V1;
 
@@ -29,27 +30,56 @@ class TestCategoryController extends Controller
      */
     public function index(Request $request): TestCategoryCollection
     {
-        $testCategories = TestCategory::setParentKeyName('parent_id');
+        $testCategoryModel = TestCategory::setParentKeyName('parent_id');
 
-        // tree() use for root resources
-        $testCategories = $request->test_category_id
-            ? $testCategories::findOrFail($request->test_category_id)->children()
-            : $testCategories->tree(0);
+        [
+            'breadcrumbs' => $breadcrumbs,
+            'testCategories' => $testCategories
+        ] = TestCategoryController::getTestCategoriesWithBreadcrumbs(
+            $request->test_category_id,
+            $testCategoryModel
+        );
 
-        return new TestCategoryCollection($testCategories->where([
+        return (new TestCategoryCollection($testCategories->where([
             'deleted_at' => null,
             'active_record' => 1
-        ])->paginate());
+        ])->paginate()))->additional(
+            ['breadcrumbs' => $breadcrumbs]
+        );
+    }
+
+    /**
+     * @param int|null $parent_test_category_id
+     * @param TestCategory $testCategoryModel
+     * @return array
+     */
+    private static function getTestCategoriesWithBreadcrumbs(
+        ?int         $parent_test_category_id,
+        TestCategory $testCategoryModel
+    ): array {
+        $breadcrumbs = [];
+
+        // tree() use for root resources
+        if ($parent_test_category_id) {
+            $testCategoryInstance = $testCategoryModel::findOrFail($parent_test_category_id);
+            $breadcrumbs = array_reverse($testCategoryInstance
+                ->ancestorsAndSelf()
+                ->get(['id', 'title'])->toArray());
+            $testCategories = $testCategoryInstance->children();
+        } else {
+            $testCategories = $testCategoryModel->tree(0);
+        }
+
+        return ['breadcrumbs' => $breadcrumbs, 'testCategories' => $testCategories];
     }
 
     /**
      * Store a newly created resource in storage.
      *
      * @param TestCategoryStoreRequest $request
-     * @param TestCategory $testCategory
      * @return TestCategoryResource
      */
-    public function store(TestCategoryStoreRequest $request, TestCategory $testCategory): TestCategoryResource
+    public function store(TestCategoryStoreRequest $request): TestCategoryResource
     {
         $validatedTestCategory = $request->validated();
         // assign expert role if user_email exists

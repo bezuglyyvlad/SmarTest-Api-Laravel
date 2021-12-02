@@ -10434,6 +10434,36 @@
         {
                         return \Illuminate\Routing\ResponseFactory::hasMacro($name);
         }
+                    /**
+         * 
+         *
+         * @see \Mtownsend\ResponseXml\Providers\ResponseXmlServiceProvider::loadLaravelResponseMacros()
+         * @param mixed $xml
+         * @param mixed $status
+         * @param array $headers
+         * @param mixed $xmlRoot
+         * @param mixed $encoding
+         * @static 
+         */ 
+        public static function xml($xml, $status = 200, $headers = [], $xmlRoot = 'response', $encoding = null)
+        {
+                        return \Illuminate\Routing\ResponseFactory::xml($xml, $status, $headers, $xmlRoot, $encoding);
+        }
+                    /**
+         * 
+         *
+         * @see \Mtownsend\ResponseXml\Providers\ResponseXmlServiceProvider::loadLaravelResponseMacros()
+         * @param mixed $data
+         * @param mixed $status
+         * @param array $headers
+         * @param mixed $xmlRoot
+         * @param mixed $encoding
+         * @static 
+         */ 
+        public static function preferredFormat($data, $status = 200, $headers = [], $xmlRoot = 'response', $encoding = null)
+        {
+                        return \Illuminate\Routing\ResponseFactory::preferredFormat($data, $status, $headers, $xmlRoot, $encoding);
+        }
          
     }
             /**
@@ -15210,6 +15240,43 @@
         public static function permission($permissions = [])
         {
                         return \Illuminate\Routing\Route::permission($permissions);
+        }
+         
+    }
+            /**
+     * 
+     *
+     */ 
+        class ResponseFactory {
+                    /**
+         * 
+         *
+         * @see \Mtownsend\ResponseXml\Providers\ResponseXmlServiceProvider::loadLaravelResponseMacros()
+         * @param mixed $xml
+         * @param mixed $status
+         * @param array $headers
+         * @param mixed $xmlRoot
+         * @param mixed $encoding
+         * @static 
+         */ 
+        public static function xml($xml, $status = 200, $headers = [], $xmlRoot = 'response', $encoding = null)
+        {
+                        return \Illuminate\Routing\ResponseFactory::xml($xml, $status, $headers, $xmlRoot, $encoding);
+        }
+                    /**
+         * 
+         *
+         * @see \Mtownsend\ResponseXml\Providers\ResponseXmlServiceProvider::loadLaravelResponseMacros()
+         * @param mixed $data
+         * @param mixed $status
+         * @param array $headers
+         * @param mixed $xmlRoot
+         * @param mixed $encoding
+         * @static 
+         */ 
+        public static function preferredFormat($data, $status = 200, $headers = [], $xmlRoot = 'response', $encoding = null)
+        {
+                        return \Illuminate\Routing\ResponseFactory::preferredFormat($data, $status, $headers, $xmlRoot, $encoding);
         }
          
     }

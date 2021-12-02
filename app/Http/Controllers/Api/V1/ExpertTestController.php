@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api\V1;
 use App\Helpers\TestHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ExpertTestDestroyRequest;
+use App\Http\Requests\ExpertTestIndexRequest;
 use App\Http\Requests\ExpertTestStoreRequest;
 use App\Http\Requests\ExpertTestUpdateRequest;
 use App\Http\Resources\ExpertTestCollection;
 use App\Http\Resources\ExpertTestResource;
 use App\Http\Resources\TestCategoryResource;
+use App\Models\Answer;
 use App\Models\ExpertTest;
 use App\Models\Question;
 use App\Models\Test;
@@ -17,6 +19,8 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class ExpertTestController extends Controller
@@ -24,17 +28,17 @@ class ExpertTestController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @param Request $request
+     * @param ExpertTestIndexRequest $request
      * @return ExpertTestCollection
      */
-    public function index(Request $request): ExpertTestCollection
+    public function index(ExpertTestIndexRequest $request): ExpertTestCollection
     {
+        $testCategoryId = (int)$request->validated()['test_category_id'];
+
         return new ExpertTestCollection(
             ExpertTest::where([
-                'test_category_id' => $request->test_category_id,
-                'is_published' => 1,
-                'active_record' => 1,
-                'deleted_at' => null
+                'test_category_id' => $testCategoryId,
+                'is_published' => 1
             ])->paginate()
         );
     }
@@ -55,10 +59,10 @@ class ExpertTestController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param int $id
+     * @param ExpertTest $expertTest
      * @return Application|ResponseFactory|\Illuminate\Http\Response
      */
-    public function show(int $id)
+    public function show(ExpertTest $expertTest)
     {
         return response(null, Response::HTTP_NOT_FOUND);
     }
@@ -70,8 +74,10 @@ class ExpertTestController extends Controller
      * @param ExpertTest $expertTest
      * @return ExpertTestResource
      * @throws \Illuminate\Validation\ValidationException
+     * @throws \Exception
+     * @throws \Throwable
      */
-    public function update(ExpertTestUpdateRequest $request, ExpertTest $expertTest)
+    public function update(ExpertTestUpdateRequest $request, ExpertTest $expertTest): ExpertTestResource
     {
         $validatedExpertTest = $request->validated();
         $replicatedOldData = $expertTest->replicate();
@@ -83,25 +89,28 @@ class ExpertTestController extends Controller
         }
 
         $onlyIsPublishedChanged = self::onlyIsPublishedChanged($replicatedOldData, $newExpertTest);
-        $activeTestId = ExpertTestUpdateRequest::validateExpertTestId($expertTest->id, $onlyIsPublishedChanged);
+        $activeTestIds = Test::getActiveTestIdsByExpertTest($expertTest->id);
 
-        // deactivate old resource
-        $expertTest->active_record = false;
-        $expertTest->is_published = false;
-        $expertTest->save();
+        // deny if users passing test
+        Test::validateNobodyPassesExpertTest($activeTestIds->count() > 0 && !$onlyIsPublishedChanged);
 
-        // create link for history records
-        $newExpertTest->modified_records_parent_id = $expertTest->id;
-        $newExpertTest->save();
+        DB::transaction(function () use ($expertTest, $newExpertTest, $onlyIsPublishedChanged, $activeTestIds) {
+            // deactivate old resource
+            $expertTest->delete();
 
-        // update test_category_id in Question table
-        Question::where('expert_test_id', $expertTest->id)
-            ->update(['expert_test_id' => $newExpertTest->id]);
+            // create link for history records
+            $newExpertTest->modified_records_parent_id = $expertTest->id;
+            $newExpertTest->save();
 
-        // update test_category_id in Test table if only is published changed
-        if ($onlyIsPublishedChanged) {
-            Test::whereIn('id', $activeTestId)->update(['expert_test_id' => $newExpertTest->id]);
-        }
+            // update test_category_id in Question table
+            Question::where('expert_test_id', $expertTest->id)
+                ->update(['expert_test_id' => $newExpertTest->id]);
+
+            // update test_category_id in Test table if only is published changed
+            if ($onlyIsPublishedChanged && $activeTestIds) {
+                Test::whereIn('id', $activeTestIds)->update(['expert_test_id' => $newExpertTest->id]);
+            }
+        });
 
         return new ExpertTestResource($newExpertTest);
     }
@@ -112,13 +121,24 @@ class ExpertTestController extends Controller
      * @param ExpertTestDestroyRequest $request
      * @param ExpertTest $expertTest
      * @return Application|ResponseFactory|\Illuminate\Http\Response
+     * @throws \Illuminate\Validation\ValidationException
+     * @throws \Exception
+     * @throws \Throwable
      */
     public function destroy(ExpertTestDestroyRequest $request, ExpertTest $expertTest)
     {
-        $expertTest->deleted_at = Carbon::now();
-        $expertTest->active_record = false;
-        $expertTest->is_published = false;
-        $expertTest->save();
+        // deny if users passing test
+        $activeTestIds = Test::getActiveTestIdsByExpertTest($expertTest->id);
+        Test::validateNobodyPassesExpertTest($activeTestIds->count() > 0);
+
+        DB::transaction(function () use ($expertTest) {
+            $questionIds = Question::where('expert_test_id', $expertTest->id)->pluck('id');
+            $answerIds = Answer::whereIn('question_id', $questionIds)->pluck('id');
+
+            $expertTest->delete();
+            Question::destroy($questionIds);
+            Answer::destroy($answerIds);
+        });
 
         return response(null, Response::HTTP_NO_CONTENT);
     }
@@ -128,7 +148,7 @@ class ExpertTestController extends Controller
      * @param ExpertTest $newExpertTest
      * @return bool
      */
-    public static function onlyIsPublishedChanged(ExpertTest $oldExpertTest, ExpertTest $newExpertTest): bool
+    private static function onlyIsPublishedChanged(ExpertTest $oldExpertTest, ExpertTest $newExpertTest): bool
     {
         $newExpertTest = array_map(
             function ($value) {

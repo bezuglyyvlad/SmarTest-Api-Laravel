@@ -6,6 +6,9 @@ use App\Helpers\TestHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TestNextQuestionRequest;
 use App\Http\Requests\TestStoreRequest;
+use App\Http\Resources\AnswerResource;
+use App\Http\Resources\PrivateAnswerResource;
+use App\Http\Resources\PrivateTestResultResource;
 use App\Http\Resources\TestCollection;
 use App\Http\Resources\TestResource;
 use App\Http\Resources\TestResultResource;
@@ -16,6 +19,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class TestController extends Controller
@@ -41,20 +45,23 @@ class TestController extends Controller
      * Store a newly created resource in storage.
      *
      * @param TestStoreRequest $request
-     * @return array|Application|ResponseFactory|\Illuminate\Http\Response
+     * @return array
+     * @throws \Throwable
      */
-    public function store(TestStoreRequest $request)
+    public function store(TestStoreRequest $request): array
     {
         $expert_test_id = $request->validated()['expert_test_id'];
-        $newTest = TestHelper::startNewTest($expert_test_id);
-        $coefRange = Question::selectCoefRange(0);
-        ['test_result' => $newQuestion, 'answers' => $answers] =
-            TestHelper::generateNewQuestion($expert_test_id, $newTest->id, 1, $coefRange);
-        return [
-            'test' => new TestResource($newTest),
-            'question' => new TestResultResource($newQuestion),
-            'answers' => $answers
-        ];
+        DB::transaction(function () use ($expert_test_id) {
+            $newTest = TestHelper::startNewTest($expert_test_id);
+            $coefRange = Question::selectCoefRange(0);
+            ['test_result' => $newQuestion, 'answers' => $answers] =
+                TestHelper::generateNewQuestion($expert_test_id, $newTest->id, 1, $coefRange);
+            return [
+                'test' => new TestResource($newTest),
+                'question' => new TestResultResource($newQuestion),
+                'answers' => AnswerResource::collection($answers)
+            ];
+        });
     }
 
     /**
@@ -62,21 +69,22 @@ class TestController extends Controller
      *
      * @psalm-suppress TooManyArguments
      * @param int $id
-     * @return array
+     * @return array|Application|ResponseFactory|\Illuminate\Http\Response
      */
-    public function show(int $id): array
+    public function show(int $id)
     {
         $test = Test::with('expert_test', 'test_category')->findOrFail($id);
-        if (($test instanceof Test) && $test->user_id === Auth::id()) {
+        if (($test instanceof Test) && $test->user_id === Auth::id() && !$test->testIsFinished()) {
             ['test_tesult' => $test_tesult, 'answers' => $answers] = TestHelper
                 ::getLastQuestionAndAnswers($test->id, ['id', 'text']);
             return [
                 'test' => new TestResource($test),
                 'question' => new TestResultResource($test_tesult),
-                'answers' => $answers
+                'answers' => AnswerResource::collection($answers)
             ];
+        } else {
+            return response(['message' => "Forbidden"], Response::HTTP_FORBIDDEN);
         }
-        return [];
     }
 
     /**
@@ -114,34 +122,37 @@ class TestController extends Controller
     /**
      * @param TestNextQuestionRequest $request
      * @return array
+     * @throws \Throwable
      */
     public function nextQuestion(TestNextQuestionRequest $request): array
     {
         $test_id = $request->test_id;
         $userAnswer = $request->answer;
-        ['test_tesult' => $test_result, 'lastQuestion' => $lastQuestion, 'answers' => $answers] =
-            TestHelper::getLastQuestionAndAnswers($test_id);
-        $test = Test::where('id', $test_id)->first();
-        TestHelper::updateTestStatistics($test_result, $answers, $userAnswer, $lastQuestion, $test);
-        if ($test->max_score < 100) {
-            // select range of coefficient new question
-            $coefRange = Question::selectCoefRange($test->score);
-            ['test_result' => $newQuestion, 'answers' => $newAnswers] = TestHelper::generateNewQuestion(
-                $test->expert_test_id,
-                $test_id,
-                $test_result->serial_number + 1,
-                $coefRange
-            );
-            return ['question' => new TestResultResource($newQuestion), 'answers' => $newAnswers];
-        }
-        return [];
+        DB::transaction(function () use ($test_id, $userAnswer) {
+            ['test_tesult' => $test_result, 'lastQuestion' => $lastQuestion, 'answers' => $answers] =
+                TestHelper::getLastQuestionAndAnswers($test_id);
+            $test = Test::where('id', $test_id)->first();
+            TestHelper::updateTestStatistics($test_result, $answers, $userAnswer, $lastQuestion, $test);
+            if ($test->max_score < 100) {
+                // select range of coefficient new question
+                $coefRange = Question::selectCoefRange($test->score);
+                ['test_result' => $newQuestion, 'answers' => $newAnswers] = TestHelper::generateNewQuestion(
+                    $test->expert_test_id,
+                    $test_id,
+                    $test_result->serial_number + 1,
+                    $coefRange
+                );
+                return ['question' => new TestResultResource($newQuestion), 'answers' => AnswerResource::collection($newAnswers)];
+            }
+            return [];
+        });
     }
 
     /**
      * @param Request $request
-     * @return array
+     * @return array|Application|ResponseFactory|\Illuminate\Http\Response
      */
-    public function result(Request $request): array
+    public function result(Request $request)
     {
         $test = Test::where(['id' => $request->test_id, 'user_id' => Auth::id()])
             ->with('expert_test', 'test_category')
@@ -150,12 +161,11 @@ class TestController extends Controller
             ['questions' => $questions, 'answers' => $answers] = TestHelper::getTestComponentsForResult($test->id);
             return [
                 'test' => new TestResource($test),
-                'questions' => TestResultResource::collection($questions),
-                'answers' => $answers,
-                'basicPoints' => Question::BASIC_POINTS,
-                'correctionCoef' => $test->getScoreCorrectionCoef()
+                'questions' => PrivateTestResultResource::collection($questions),
+                'answers' => PrivateAnswerResource::collection($answers)->collection->groupBy('question_id'),
             ];
+        } else {
+            return response(['message' => "Forbidden"], Response::HTTP_FORBIDDEN);
         }
-        return [];
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 /**
@@ -14,6 +15,7 @@ class TestCategory extends Model
 {
     use HasFactory;
     use HasRecursiveRelationships;
+    use SoftDeletes;
 
     protected $fillable = [
         'title',
@@ -66,16 +68,14 @@ class TestCategory extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * @param int $testCategoryId
-     * @return bool
-     */
-    public static function ancestorsCategoryDeleted(int $testCategoryId): bool
+    public static function getHistoryRecordIds(int $testCategoryId)
     {
-        return !!TestCategory::setParentKeyName('parent_id')
+        return TestCategory
+            ::setParentKeyName('modified_records_parent_id')
             ->findOrFail($testCategoryId)
-            ->ancestors()
-            ->where('deleted_at', '!=', null)->get()
-            ->count();
+            ->ancestorsAndSelf()
+            ->withTrashed()
+            ->pluck('id')
+            ->toArray();
     }
 }

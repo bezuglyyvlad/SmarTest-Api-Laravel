@@ -26,13 +26,7 @@ class TestCategoryResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'parent_id' => $this->parent_id,
-            'user' => $this->when(
-                User::isAdmin() || User::isExpert($this->id),
-                new UserResource($this->whenLoaded('user'))
-            ),
-            'has_children' => !!TestCategory::setParentKeyName('parent_id')::find($this->id)
-                ->children()
-                ->count(),
+            'user' => new UserResource($this->whenLoaded('user'))
         ];
     }
 }

@@ -19,14 +19,12 @@ class CreateExpertTestsTable extends Migration
             $table->string('title');
             $table->boolean('is_published')->default(false);
 
-            $table->boolean('active_record')->default(true);
             $table->unsignedBigInteger('modified_records_parent_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
             $table->foreignId('test_category_id')->constrained();
-            $table->index('active_record');
         });
     }
 

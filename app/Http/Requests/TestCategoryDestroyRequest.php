@@ -16,15 +16,14 @@ class TestCategoryDestroyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // active record and admin or this category expert
+        // admin or this category expert
         /**
          * @psalm-suppress PossiblyNullPropertyFetch
          * @psalm-suppress PossiblyInvalidPropertyFetch
          * @psalm-suppress UndefinedInterfaceMethod
          * @psalm-suppress PossiblyNullReference
          */
-        return $this->route('test_category')->active_record === 1
-            && ((User::isAdmin() && !$this->parent_id) || User::isExpert($this->test_category->id));
+        return (User::isAdmin() && !$this->parent_id) || User::isExpert($this->test_category->id);
     }
 
     /**

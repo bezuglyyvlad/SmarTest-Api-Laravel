@@ -17,21 +17,20 @@ class TestCategoryUpdateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // active record and admin or this category expert
-        // or parent_id ancestor expert (if move to not your category)
-        /**
-         * @psalm-suppress PossiblyNullPropertyFetch
-         * @psalm-suppress PossiblyInvalidPropertyFetch
-         * @psalm-suppress PossiblyNullReference
-         * @psalm-suppress UndefinedInterfaceMethod
-         */
-        return $this->route('test_category')->active_record === 1
-            && (
-                (User::isAdmin() && !$this->parent_id)
-                || User::isExpert($this->test_category->id)
-                || $this->parent_id
-                && User::isExpert($this->parent_id)
-            );
+//        // swap subcategory
+//        // if no loop
+//        // admin for basic category
+//        // or parent_id ancestor expert
+//        return $this->test_category->id !== (int)$this->parent_id &&
+//            ((User::isAdmin() && !$this->parent_id) ||
+//            ($this->test_category->parent_id &&
+//                User::isExpert($this->test_category->id) &&
+//                $this->parent_id &&
+//                User::isExpert($this->parent_id)));
+        // no swap subcategory
+        return (User::isAdmin() && !$this->test_category->parent_id) ||
+            ($this->test_category->parent_id &&
+                User::isExpert($this->test_category->id));
     }
 
     /**
@@ -42,8 +41,7 @@ class TestCategoryUpdateRequest extends FormRequest
         return [
             'title.unique' => 'Ця назва вже зайнята.',
             'user_email.exists' =>
-                'Вибрана електронна адреса
-                користувача недійсна.'
+                'Вибрана електронна адреса користувача недійсна.'
         ];
     }
 
@@ -59,30 +57,21 @@ class TestCategoryUpdateRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                // unique among active records and nesting level ignore this resource
+                // unique among nesting level ignore this resource
                 Rule::unique('test_categories')->where(
                 /**
                  * @psalm-suppress MissingClosureReturnType
                  * @psalm-suppress MissingClosureParamType
                  */
                     function ($query) {
-                        return $query->where(['parent_id' => $this->parent_id, 'active_record' => 1]);
+                        return $query->where(['parent_id' => $this->test_category->parent_id]);
                     }
-                )->ignore($this->test_category->id)
+                )->ignore($this->test_category->id)->whereNull('deleted_at')
             ],
-            'parent_id' => [
-                'nullable',
-                // exists among test_categories_id and active records
-                Rule::exists('test_categories', 'id')->where(
-                /**
-                 * @psalm-suppress MissingClosureReturnType
-                 * @psalm-suppress MissingClosureParamType
-                 */
-                    function ($query) {
-                        return $query->where('active_record', 1);
-                    }
-                )
-            ],
+//            'parent_id' => [
+//                'nullable',
+//                'exists:test_categories,id,deleted_at,NULL'
+//            ],
             'user_email' => 'nullable|string|email|max:255|exists:users,email',
         ];
     }

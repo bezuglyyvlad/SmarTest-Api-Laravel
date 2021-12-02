@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 /**
@@ -14,6 +16,7 @@ class ExpertTest extends Model
 {
     use HasFactory;
     use HasRecursiveRelationships;
+    use SoftDeletes;
 
     protected $fillable = [
         'title',
@@ -42,5 +45,36 @@ class ExpertTest extends Model
         static::$parentKey = $parentKey;
 
         return new static();
+    }
+
+    /**
+     * @param int $expertTestId
+     * @return array
+     */
+    public static function getExpertTestHistoryRecordIds(int $expertTestId): array
+    {
+        return ExpertTest
+            ::setParentKeyName('modified_records_parent_id')
+            ::findOrFail($expertTestId)
+            ->ancestorsAndSelf()
+            ->withTrashed()
+            ->pluck('id')
+            ->toArray();
+    }
+
+    /**
+     * @return bool
+     * @throws ValidationException
+     */
+    public function validateExpertTestNotPublished(): bool
+    {
+        if ($this->is_published) {
+            throw ValidationException::withMessages([
+                'expert_test_id' => [
+                    'Неможливо виконати операцію, якщо тест відкрито.'
+                ]
+            ]);
+        }
+        return true;
     }
 }

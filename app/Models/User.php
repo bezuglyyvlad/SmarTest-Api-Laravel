@@ -111,7 +111,7 @@ class User extends Authenticatable
      */
     public function removeExpertRole()
     {
-        if (TestCategory::where('user_id', $this->id)->count() === 0) {
+        if (TestCategory::where(['user_id' => $this->id])->count() === 0) {
             return $this->removeRole($this->getExpertRole());
         }
         return true;

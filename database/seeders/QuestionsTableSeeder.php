@@ -20,13 +20,10 @@ class QuestionsTableSeeder extends Seeder
     {
         $data = [
             [
-                'text' =>
-                    'Що станеться в результаті
-                    виконання наступного коду:',
+                'text' => 'Що станеться в результаті виконання наступного коду:',
                 'quality_coef' => 1,
                 'type' => 1,
-                'description' => 'Код виконається без помилок.
-                Перший alert виведе повідомлення "undefined", а другий - "5"',
+                'description' => 'Код виконається без помилок. Перший alert виведе повідомлення "undefined", а другий - "5"',
                 'image' => true,
                 'expert_test_id' => 5
             ],
@@ -47,9 +44,7 @@ class QuestionsTableSeeder extends Seeder
                 'expert_test_id' => 5
             ],
             [
-                'text' =>
-                    'Яке з цих слів не має спеціального використання
-                    в JavaScript, ніяк не згадується в стандарті?',
+                'text' => 'Яке з цих слів не має спеціального використання в JavaScript, ніяк не згадується в стандарті?',
                 'quality_coef' => 1,
                 'type' => 1,
                 'description' => null,
@@ -58,8 +53,7 @@ class QuestionsTableSeeder extends Seeder
             ],
             [
                 'text' =>
-                    'Які символи коректно знайдуть максимальне
-                    значення в непорожньому масиві arr?',
+                    'Які символи коректно знайдуть максимальне значення в непорожньому масиві arr?',
                 'quality_coef' => 3,
                 'type' => 2,
                 'description' => null,
@@ -102,12 +96,7 @@ class QuestionsTableSeeder extends Seeder
                 'text' => 'Що буде виведено на екран таким кодом?',
                 'quality_coef' => 1,
                 'type' => 1,
-                'description' =>
-                    "Створили об'єкт а, так як це масив то у нього
-                    є атрибут length проініціалізіроаний нулем
-                    a.length = 0, у 2-му рядку елементу масиву з
-                    індексом 0 привласнюють значення 0, в масиві
-                    1 елемент, відповідно a.length = 1.",
+                'description' => "Створили об'єкт а, так як це масив то у нього є атрибут length проініціалізіроаний нулем a.length = 0, у 2-му рядку елементу масиву з індексом 0 привласнюють значення 0, в масиві 1 елемент, відповідно a.length = 1.",
                 'image' => true,
                 'expert_test_id' => 5
             ],
@@ -120,9 +109,7 @@ class QuestionsTableSeeder extends Seeder
                 'expert_test_id' => 5
             ],
             [
-                'text' =>
-                    'Які з цих викликів синтаксично вірно
-                    згенерують виняток?',
+                'text' => 'Які з цих викликів синтаксично вірно згенерують виняток?',
                 'quality_coef' => 1,
                 'type' => 2,
                 'description' => null,
@@ -146,9 +133,7 @@ class QuestionsTableSeeder extends Seeder
                 'expert_test_id' => 5
             ],
             [
-                'text' =>
-                    'Чи спрацює виклик функції до
-                    оголошення в цьому коді:',
+                'text' => 'Чи спрацює виклик функції до оголошення в цьому коді:',
                 'quality_coef' => 2,
                 'type' => 1,
                 'description' => null,
@@ -164,9 +149,7 @@ class QuestionsTableSeeder extends Seeder
                 'expert_test_id' => 5
             ],
             [
-                'text' =>
-                    'Який оператор із цих виконує не лише
-                    математичні операції?',
+                'text' => 'Який оператор із цих виконує не лише математичні операції?',
                 'quality_coef' => 1,
                 'type' => 1,
                 'description' => null,
@@ -206,9 +189,7 @@ class QuestionsTableSeeder extends Seeder
                 'expert_test_id' => 5
             ],
             [
-                'text' =>
-                    "Після виконання цього коду - у яких об'єктах
-                    зі списку міститься властивість name?",
+                'text' => "Після виконання цього коду - у яких об'єктах зі списку міститься властивість name?",
                 'quality_coef' => 3,
                 'type' => 2,
                 'description' => null,
@@ -283,6 +264,9 @@ class QuestionsTableSeeder extends Seeder
             }
             $questions[] = [
                 'text' => $data[$i]['text'],
+                'complexity' => 1,
+                'significance' => 1,
+                'relevance' => 1,
                 'quality_coef' => $quality_coef,
                 'type' => $data[$i]['type'],
                 'description' => $data[$i]['description'],

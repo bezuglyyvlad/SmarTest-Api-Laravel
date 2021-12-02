@@ -91,6 +91,7 @@ class TestHelper
         $testResult->user_answer = json_encode($validUserAnswer);
         $testResult->is_correct_answer = $poinst === $testResult->score;
         $testResult->score = $testResult->score * Test::MAX_CORRECTION_COEF;
+        $testResult->max_score = $poinst * Test::MAX_CORRECTION_COEF;
         $testResult->save();
 
         // update test score
@@ -100,6 +101,7 @@ class TestHelper
             $test->score = ($test->score / Test::MAX_CORRECTION_COEF) * 100 / $test->max_score;
             TestResult::where('test_id', $test->id)->get()->each(function (TestResult $item) use ($test) {
                 $item->score = ($item->score / Test::MAX_CORRECTION_COEF) * 100 / $test->max_score;
+                $item->max_score = ($item->max_score / Test::MAX_CORRECTION_COEF) * 100 / $test->max_score;
                 $item->save();
             });
             $test->finish_date = Carbon::now()->toIso8601String();
@@ -116,7 +118,7 @@ class TestHelper
      */
     private static function selectNewQuestion(array $coefRange, int $expertTestId, int $testId): Question
     {
-        $questions = Question::where(['expert_test_id' => $expertTestId, 'active_record' => 1])
+        $questions = Question::where(['expert_test_id' => $expertTestId])
             ->whereBetween('quality_coef', $coefRange)->get();
         $test_result = TestResult::with('question')
             ->where('test_id', $testId)
@@ -140,8 +142,8 @@ class TestHelper
     ): array {
         $question = self::selectNewQuestion($coefRange, $expertTestId, $testId);
         $answers = Answer::select(['id', 'text'])
-            ->where(['question_id' => $question->id, 'active_record' => 1])
-            ->get();
+            ->where(['question_id' => $question->id])
+            ->get()->shuffle();
         $testResult = new TestResult();
         $testResult->serial_number = $serialNumber;
         $testResult->answer_ids = $answers->pluck('id')->toJson();
@@ -176,11 +178,12 @@ class TestHelper
      */
     public static function getTestComponentsForResult(int $testId): array
     {
-        $questions = TestResult::where('test_id', $testId)->with('question')->get();
+        $questions = TestResult::where('test_id', $testId)->with('question')
+            ->get();
         $answer_ids = self::getAnswerIds($questions);
-        $answers = Answer::select(['id', 'text', 'is_correct', 'question_id'])
+        $answers = Answer::withTrashed()->select(['id', 'text', 'is_correct', 'question_id'])
             ->whereIn('id', $answer_ids)
-            ->get()->groupBy('question_id');
+            ->get();
 
         return ['questions' => $questions, 'answers' => $answers];
     }
@@ -195,6 +198,7 @@ class TestHelper
             ::setParentKeyName('parent_id')
             ::findOrFail($testCategoryId)
             ->descendantsAndSelf()
+            ->withTrashed()
             ->pluck('id')
             ->toArray();
         return ExpertTest::whereIn('test_category_id', $testCategoryHistoryRecordIds)
@@ -207,7 +211,7 @@ class TestHelper
     public static function getBasicTestCategories(): \Illuminate\Support\Collection
     {
         return TestCategory::select(['id', 'title'])
-            ->where(['active_record' => 1, 'parent_id' => null])
+            ->where(['parent_id' => null])
             ->get();
     }
 }

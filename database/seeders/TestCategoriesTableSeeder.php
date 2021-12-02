@@ -50,7 +50,6 @@ class TestCategoriesTableSeeder extends Seeder
             $categories[] = [
                 'title' => $data[$i]['title'],
                 'parent_id' => $data[$i]['parent_id'],
-                'active_record' => $delete_at ? 0 : 1,
                 'created_at' => Carbon::now()->modify('-1 month'),
                 'updated_at' => Carbon::now()->modify('-10 day'),
                 'deleted_at' => $delete_at,

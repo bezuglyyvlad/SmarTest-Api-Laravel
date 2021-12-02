@@ -2,8 +2,16 @@
 
 namespace App\Models;
 
+use App\Helpers\Image;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
@@ -11,6 +19,18 @@ use Illuminate\Database\Eloquent\Model;
 class Question extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+
+    protected $fillable = [
+        'text',
+        'complexity',
+        'significance',
+        'relevance',
+        'type',
+        'description',
+        'image',
+        'expert_test_id'
+    ];
 
     public const LOWER_LIMIT_QUALITY_COEF = 0.5;
     public const UPPER_LIMIT_QUALITY_COEF = 1.5;
@@ -26,13 +46,12 @@ class Question extends Model
     public const BASIC_POINTS = 6.66;
 
     public const TYPES_WITH_ONE_ASWER = [1];
-
-    protected $appends = ['complexity'];
+    public const TYPE_OF_QUESTIONS = 2;
 
     /**
      * @return int
      */
-    public function getComplexityAttribute(): int
+    public function getCondComplexityAttribute(): int
     {
         if (
             $this->attributes['quality_coef'] >= Question::LOWER_EASY_QUESTION_COEF &&
@@ -62,5 +81,46 @@ class Question extends Model
             $coefRange = [self::LOWER_HARD_QUESTION_COEF, self::UPPER_HARD_QUESTION_COEF];
         }
         return $coefRange;
+    }
+
+    /**
+     * @return HasMany
+     */
+    public function answers(): HasMany
+    {
+        return $this->hasMany(Answer::class);
+    }
+
+    /**
+     * @return float
+     */
+    public function getQualityCoefByFuzzyLogic(): float
+    {
+        $criteriaArray = [
+            'complexity' => $this->complexity,
+            'significance' => $this->significance,
+            'relevance' => $this->relevance
+        ];
+
+        $similarQuestion = Question::where($criteriaArray)->first();
+        $qualityCoef = $similarQuestion ? $similarQuestion->quality_coef : null;
+
+        if (!$qualityCoef) {
+            $process = new Process(
+                ['python', 'PythonScripts/fuzzyLogic.py'],
+                null,
+                $criteriaArray
+            );
+            $process->run();
+
+            // error handling
+            if (!$process->isSuccessful()) {
+                throw new ProcessFailedException($process);
+            }
+
+            return (float)$process->getOutput();
+        }
+
+        return (float)$qualityCoef;
     }
 }

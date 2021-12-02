@@ -19,14 +19,12 @@ class CreateAnswersTable extends Migration
             $table->text('text');
             $table->boolean('is_correct');
 
-            $table->boolean('active_record')->default(true);
             $table->unsignedBigInteger('modified_records_parent_id')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
             $table->foreignId('question_id')->constrained();
-            $table->index('active_record');
         });
     }
 

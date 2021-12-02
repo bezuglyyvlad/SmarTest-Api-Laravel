@@ -36,11 +36,14 @@ class AllComplexityPresent implements Rule
         if ($value) {
             $countOfEasyQuestions = Question::where(
                 [
-                    'expert_test_id' => $this->expert_test_id, 'active_record' => 1
+                    'expert_test_id' => $this->expert_test_id
                 ]
-            )->get()->groupBy('complexity')->map(function (Collection $i): int {
-                return $i->count();
-            })->count();
+            )->get()
+                ->append('condComplexity')
+                ->groupBy('condComplexity')
+                ->map(function (Collection $i): int {
+                    return $i->count();
+                })->count();
             return $countOfEasyQuestions === 3;
         }
         return true;
@@ -54,7 +57,6 @@ class AllComplexityPresent implements Rule
     public function message(): string
     {
         return
-            'Тест не може бути відкритий.
-            Повинні бути питання всіх складностей.';
+            'Тест не може бути відкритий. Повинні бути питання всіх складностей.';
     }
 }

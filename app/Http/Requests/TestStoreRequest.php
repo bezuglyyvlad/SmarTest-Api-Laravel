@@ -16,12 +16,13 @@ class TestStoreRequest extends FormRequest
      *
      * @return bool
      */
-    public function authorize()
+    public function authorize(): bool
     {
         $test = Test::where(['expert_test_id' => $this->expert_test_id, 'user_id' => Auth::id()])
             ->orderByDesc('id')
             ->first();
 
+        // allow if test not exists or exists but is finished
         return !$test || $test->testIsFinished();
     }
 
@@ -30,12 +31,12 @@ class TestStoreRequest extends FormRequest
      *
      * @return array
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'expert_test_id' => [
                 'required',
-                // exists among test_categories_id and active records
+                // exists and is published
                 Rule::exists('expert_tests', 'id')->where(
                 /**
                  * @psalm-suppress MissingClosureReturnType
@@ -43,12 +44,10 @@ class TestStoreRequest extends FormRequest
                  */
                     function ($query) {
                         return $query->where([
-                            'deleted_at' => null,
-                            'active_record' => 1,
                             'is_published' => 1,
                         ]);
                     }
-                )
+                )->whereNull('deleted_at')
             ]
         ];
     }

@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 /** @psalm-suppress PropertyNotSetInConstructor */
-class ExpertPanelStatisticsRequest extends FormRequest
+class ExpertPanelGetByExpertTestRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

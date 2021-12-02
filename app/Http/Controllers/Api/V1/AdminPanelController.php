@@ -22,9 +22,6 @@ class AdminPanelController extends Controller
     {
         $testCategoryModel = TestCategory::setParentKeyName('parent_id');
         $testCategories = $testCategoryModel->tree(0);
-        return TestCategoryResource::collection($testCategories->with('user')->where([
-            'deleted_at' => null,
-            'active_record' => 1
-        ])->get());
+        return TestCategoryResource::collection($testCategories->with('user')->get());
     }
 }

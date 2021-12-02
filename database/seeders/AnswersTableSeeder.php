@@ -254,9 +254,7 @@ class AnswersTableSeeder extends Seeder
             ],
 
             [
-                'text' =>
-                    'Рівно стільки, скільки
-                    вказано у визначенні функції.',
+                'text' => 'Рівно стільки, скільки вказано у визначенні функції.',
                 'is_correct' => 0,
                 'question_id' => 11,
             ],
@@ -266,9 +264,7 @@ class AnswersTableSeeder extends Seeder
                 'question_id' => 11,
             ],
             [
-                'text' =>
-                    'Скільки зазначено у визначенні
-                    функції або більше.',
+                'text' => 'Скільки зазначено у визначенні функції або більше.',
                 'is_correct' => 0,
                 'question_id' => 11,
             ],

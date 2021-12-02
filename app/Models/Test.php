@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @psalm-suppress PropertyNotSetInConstructor
@@ -24,7 +25,7 @@ class Test extends Model
      */
     public function expert_test(): BelongsTo // phpcs:ignore
     {
-        return $this->belongsTo(ExpertTest::class);
+        return $this->belongsTo(ExpertTest::class)->withTrashed();
     }
 
     /**
@@ -32,7 +33,7 @@ class Test extends Model
      */
     public function test_category(): BelongsTo // phpcs:ignore
     {
-        return $this->belongsTo(TestCategory::class);
+        return $this->belongsTo(TestCategory::class)->withTrashed();
     }
 
     /**
@@ -60,10 +61,29 @@ class Test extends Model
     }
 
     /**
-     * @return float|int
+     * @param int $id
+     * @param bool $onlyIsPublishedChanged
+     * @return \Illuminate\Support\Collection
+     * @throws ValidationException
      */
-    public function getScoreCorrectionCoef()
+    public static function getActiveTestIdsByExpertTest(int $id): \Illuminate\Support\Collection
     {
-        return $this->max_score >= 100 ? 100 / $this->max_score : self::MAX_CORRECTION_COEF;
+        return Test::where('expert_test_id', $id)
+            ->get()
+            ->filter(function (Test $test) {
+                return !$test->testIsFinished();
+            })->pluck('id');
+    }
+
+    public static function validateNobodyPassesExpertTest($errorCondition): bool
+    {
+        if ($errorCondition) {
+            throw ValidationException::withMessages([
+                'expert_test_id' => [
+                    'Хтось ще проходить тест. Закрийте його та дочекайтеся поки всі закінчать, після чого виконайте операцію знову.'
+                ]
+            ]);
+        }
+        return true;
     }
 }

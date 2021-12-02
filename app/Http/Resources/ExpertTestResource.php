@@ -23,8 +23,8 @@ class ExpertTestResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'is_published' => $this->is_published,
-            'active_record' => $this->active_record,
             'test_category_id' => $this->test_category_id,
+            // for continue test
             'test' => $this->when(
                 $test && !$test->testIsFinished(),
                 new TestResource($test)

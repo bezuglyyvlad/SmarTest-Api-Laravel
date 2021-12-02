@@ -25,11 +25,11 @@ class TestResource extends JsonResource
             'is_finished' => Test::findOrFail($this->id)->testIsFinished(),
             'user_id' => $this->user_id,
             'expert_test_id' => $this->expert_test_id,
-            'test_category_id' => $this->expert_test_id,
+            'test_category_id' => $this->test_category_id,
             'expert_test' => new ExpertTestResource($this->whenLoaded('expert_test')),
             'test_category' => new TestCategoryResource($this->whenLoaded('test_category')),
             'user' => new UserResource($this->whenLoaded('user')),
-            'test_results' => TestResultResource::collection($this->whenLoaded('test_results'))
+            'test_results' => PrivateTestResultResource::collection($this->whenLoaded('test_results'))
         ];
     }
 }

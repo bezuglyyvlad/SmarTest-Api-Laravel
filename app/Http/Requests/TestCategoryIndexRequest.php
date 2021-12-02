@@ -2,20 +2,18 @@
 
 namespace App\Http\Requests;
 
-use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
-/** @psalm-suppress PropertyNotSetInConstructor */
-class ExpertTestDestroyRequest extends FormRequest
+class TestCategoryIndexRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      *
      * @return bool
      */
-    public function authorize(): bool
+    public function authorize()
     {
-        return User::isExpert($this->expert_test->test_category_id);
+        return true;
     }
 
     /**
@@ -26,7 +24,7 @@ class ExpertTestDestroyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'test_category_id' => 'nullable|exists:test_categories,id,deleted_at,NULL'
         ];
     }
 }

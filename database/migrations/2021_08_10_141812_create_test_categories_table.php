@@ -19,7 +19,6 @@ class CreateTestCategoriesTable extends Migration
             $table->string('title');
             $table->unsignedBigInteger('parent_id')->nullable();
 
-            $table->boolean('active_record')->default(true);
             $table->unsignedBigInteger('modified_records_parent_id')->nullable();
 
             $table->timestamps();
@@ -27,7 +26,6 @@ class CreateTestCategoriesTable extends Migration
 
             $table->foreignId('user_id')->nullable()->constrained()
                 ->onUpdate('cascade')->onDelete('set null');
-            $table->index('active_record');
         });
     }
 

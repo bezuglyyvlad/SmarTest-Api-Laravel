@@ -15,9 +15,9 @@ class ExpertTestStoreRequest extends FormRequest
      *
      * @return bool
      */
-    public function authorize()
+    public function authorize(): bool
     {
-        return User::isExpert($this->test_category_id);
+        return $this->test_category_id && User::isExpert($this->test_category_id);
     }
 
     public function messages(): array
@@ -32,38 +32,25 @@ class ExpertTestStoreRequest extends FormRequest
      *
      * @return array
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'title' => [
                 'required',
                 'string',
                 'max:255',
-                // unique among active records
                 Rule::unique('expert_tests')->where(
                 /**
                  * @psalm-suppress MissingClosureReturnType
                  * @psalm-suppress MissingClosureParamType
                  */
                     function ($query) {
-                        return $query->where('active_record', 1);
+                        return $query->where('test_category_id', $this->test_category_id);
                     }
-                )
+                )->whereNull('deleted_at')
             ],
-//            'is_published' => ['boolean', new AllComplexityPresent(null)],
-            'test_category_id' => [
-                'required',
-                // exists among test_categories_id and active records
-                Rule::exists('test_categories', 'id')->where(
-                /**
-                 * @psalm-suppress MissingClosureReturnType
-                 * @psalm-suppress MissingClosureParamType
-                 */
-                    function ($query) {
-                        return $query->where('active_record', 1);
-                    }
-                )
-            ]
+            'is_published' => ['boolean', Rule::in([0])],
+            'test_category_id' => 'required|exists:test_categories,id,deleted_at,NULL'
         ];
     }
 }

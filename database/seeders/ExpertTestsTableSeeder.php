@@ -76,7 +76,6 @@ class ExpertTestsTableSeeder extends Seeder
             $expertTests[] = [
                 'title' => $data[$i]['title'],
                 'is_published' => $data[$i]['is_published'],
-                'active_record' => $delete_at ? 0 : 1,
                 'created_at' => Carbon::now()->subMonth(),
                 'updated_at' => Carbon::now()->subDays(rand(10, 30)),
                 'deleted_at' => $delete_at,

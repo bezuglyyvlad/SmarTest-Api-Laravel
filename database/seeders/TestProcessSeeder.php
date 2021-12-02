@@ -31,7 +31,8 @@ class TestProcessSeeder extends Seeder
             // login
             $user = User::findOrFail($j);
 
-            $countOfTests = rand(1, 3);
+            // $countOfTests = rand(1, 3);
+            $countOfTests = 1;
 
             for ($i = 0; $i < $countOfTests; $i++) {
                 // disable rate limit

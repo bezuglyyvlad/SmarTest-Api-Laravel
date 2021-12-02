@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TestCategoryDestroyRequest;
+use App\Http\Requests\ExpertTestIndexRequest;
+use App\Http\Requests\TestCategoryIndexRequest;
 use App\Http\Requests\TestCategoryStoreRequest;
 use App\Http\Requests\TestCategoryUpdateRequest;
 use App\Http\Resources\TestCategoryCollection;
 use App\Http\Resources\TestCategoryResource;
+use App\Models\Answer;
 use App\Models\ExpertTest;
+use App\Models\Question;
 use App\Models\TestCategory;
 use App\Models\User;
 use Carbon\Carbon;
@@ -17,35 +21,39 @@ use Exception;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class TestCategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @param Request $request
+     * @param TestCategoryIndexRequest $request
      * @return TestCategoryCollection
      */
-    public function index(Request $request): TestCategoryCollection
+    public function index(TestCategoryIndexRequest $request): TestCategoryCollection
     {
         $testCategoryModel = TestCategory::setParentKeyName('parent_id');
+        $testCategoryId = array_key_exists('test_category_id', $request->validated()) ?
+            (int)$request->validated()['test_category_id'] :
+            null;
 
         [
             'breadcrumbs' => $breadcrumbs,
             'testCategories' => $testCategories
         ] = TestCategoryController::getTestCategoriesWithBreadcrumbs(
-            $request->test_category_id,
+            $testCategoryId,
             $testCategoryModel
         );
 
-        return (new TestCategoryCollection($testCategories->where([
-            'deleted_at' => null,
-            'active_record' => 1
-        ])->paginate()))->additional(
-            ['breadcrumbs' => $breadcrumbs]
-        );
+        return (new TestCategoryCollection($testCategories
+            ->paginate()))
+            ->additional(
+                ['breadcrumbs' => $breadcrumbs]
+            );
     }
 
     /**
@@ -91,18 +99,18 @@ class TestCategoryController extends Controller
 
         $createdTestCategory = TestCategory::create($validatedTestCategory);
 
-        return new TestCategoryResource($createdTestCategory);
+        return new TestCategoryResource($createdTestCategory->load('user'));
     }
 
     /**
      * Display the specified resource.
      *
      * @param TestCategory $testCategory
-     * @return TestCategoryResource
+     * @return Application|\Illuminate\Http\Response|ResponseFactory
      */
-    public function show(TestCategory $testCategory): TestCategoryResource
+    public function show(TestCategory $testCategory)
     {
-        return new TestCategoryResource($testCategory);
+        return response(null, Response::HTTP_NOT_FOUND);
     }
 
     /**
@@ -111,6 +119,8 @@ class TestCategoryController extends Controller
      * @param TestCategoryUpdateRequest $request
      * @param TestCategory $testCategory
      * @return TestCategoryResource
+     * @throws Exception
+     * @throws \Throwable
      */
     public function update(TestCategoryUpdateRequest $request, TestCategory $testCategory): TestCategoryResource
     {
@@ -118,7 +128,7 @@ class TestCategoryController extends Controller
         $newTestCategory = $testCategory->replicate();
         // remove expert role for old user expert
         if ($newTestCategory->user_id) {
-            $oldExpert = User::find($newTestCategory->user_id);
+            $oldExpert = User::findOrFail($newTestCategory->user_id);
             $oldExpert->removeExpertRole();
         }
         // by default user_id is null for new resource
@@ -135,19 +145,22 @@ class TestCategoryController extends Controller
             return new TestCategoryResource($testCategory);
         }
 
-        // deactivate old resource
-        $testCategory->active_record = false;
-        $testCategory->save();
+        DB::transaction(function () use ($testCategory, $newTestCategory) {
+            // deactivate old resource
+            $testCategory->delete();
 
-        // create link for history records
-        $newTestCategory->modified_records_parent_id = $testCategory->id;
-        $newTestCategory->save();
+            // create link for history records
+            $newTestCategory->modified_records_parent_id = $testCategory->id;
+            $newTestCategory->save();
 
-        // update test_category_id in linked tables
-        ExpertTest::where('test_category_id', $testCategory->id)
-            ->update(['test_category_id' => $newTestCategory->id]);
+            // update test_category_id in linked tables
+            TestCategory::where('parent_id', $testCategory->id)
+                ->update(['parent_id' => $newTestCategory->id]);
+            ExpertTest::where('test_category_id', $testCategory->id)
+                ->update(['test_category_id' => $newTestCategory->id]);
+        });
 
-        return new TestCategoryResource($newTestCategory);
+        return new TestCategoryResource($newTestCategory->load('user'));
     }
 
     /**
@@ -155,13 +168,24 @@ class TestCategoryController extends Controller
      *
      * @param TestCategoryDestroyRequest $request
      * @param TestCategory $testCategory
-     * @return Application|ResponseFactory|\Illuminate\Http\Response
+     * @return Application|\Illuminate\Http\Response|ResponseFactory
+     * @throws Exception
+     * @throws Throwable
      */
     public function destroy(TestCategoryDestroyRequest $request, TestCategory $testCategory)
     {
-        $testCategory->deleted_at = Carbon::now();
-        $testCategory->active_record = false;
-        $testCategory->save();
+        DB::transaction(function () use ($testCategory) {
+            $testCategoryIds = TestCategory::setParentKeyName('parent_id')
+                ::findOrFail($testCategory->id)->descendantsAndSelf()->pluck('id');
+            $expertTestIds = ExpertTest::whereIn('test_category_id', $testCategoryIds)->pluck('id');
+            $questionIds = Question::whereIn('expert_test_id', $expertTestIds)->pluck('id');
+            $answerIds = Answer::whereIn('question_id', $questionIds)->pluck('id');
+
+            TestCategory::destroy($testCategoryIds);
+            ExpertTest::destroy($expertTestIds);
+            Question::destroy($questionIds);
+            Answer::destroy($answerIds);
+        });
 
         return response(null, Response::HTTP_NO_CONTENT);
     }

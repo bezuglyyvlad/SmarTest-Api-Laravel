@@ -6,14 +6,14 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
 /** @psalm-suppress PropertyNotSetInConstructor */
-class ExpertPanelShowRequest extends FormRequest
+class ExpertPanelTestCategoryComponentsRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      *
      * @return bool
      */
-    public function authorize()
+    public function authorize(): bool
     {
         return User::isExpert($this->test_category_id);
     }
@@ -26,7 +26,7 @@ class ExpertPanelShowRequest extends FormRequest
     public function rules()
     {
         return [
-            //
+            'test_category_id' => 'required|exists:test_categories,id,deleted_at,NULL'
         ];
     }
 }

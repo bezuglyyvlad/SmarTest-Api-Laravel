@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ExpertTest;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
-/** @psalm-suppress PropertyNotSetInConstructor */
-class ExpertTestDestroyRequest extends FormRequest
+class QuestionUploadImageRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -15,7 +15,8 @@ class ExpertTestDestroyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return User::isExpert($this->expert_test->test_category_id);
+        $expertTest = ExpertTest::findOrFail($this->question->expert_test_id);
+        return User::isExpert($expertTest->test_category_id);
     }
 
     /**
@@ -26,7 +27,7 @@ class ExpertTestDestroyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'image' => 'required|image|max:512'
         ];
     }
 }

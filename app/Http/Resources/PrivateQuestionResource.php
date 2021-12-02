@@ -3,15 +3,9 @@
 namespace App\Http\Resources;
 
 use App\Helpers\Image;
-use App\Models\ExpertTest;
-use App\Models\Test;
-use App\Models\TestResult;
-use App\Models\User;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Auth;
 
-class QuestionResource extends JsonResource
+class PrivateQuestionResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -24,10 +18,16 @@ class QuestionResource extends JsonResource
         return [
             'id' => $this->id,
             'text' => $this->text,
+            'complexity' => $this->complexity,
+            'significance' => $this->significance,
+            'relevance' => $this->relevance,
+            'quality_coef' => $this->quality_coef,
             'type' => $this->type,
+            'description' => $this->description,
             'image' => $this->image ? Image::getImageUrl('question', $this->image) : null,
             'expert_test_id' => $this->expert_test_id,
-            'condComplexity' => $this->whenAppended('condComplexity')
+            'condComplexity' => $this->whenAppended('condComplexity'),
+            'answers' => PrivateAnswerResource::collection($this->whenLoaded('answers'))
         ];
     }
 }

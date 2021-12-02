@@ -17,7 +17,7 @@ class TestCategoryStoreRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // admin or ancestor expert
+        // admin for basic category or ancestor expert for nested
         /**
          * @psalm-suppress PossiblyNullReference
          * @psalm-suppress UndefinedInterfaceMethod
@@ -51,29 +51,20 @@ class TestCategoryStoreRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                // unique among active records and nesting level
+                // unique among nesting level
                 Rule::unique('test_categories')->where(
                 /**
                  * @psalm-suppress MissingClosureReturnType
                  * @psalm-suppress MissingClosureParamType
                  */
                     function ($query) {
-                        return $query->where(['parent_id' => $this->parent_id, 'active_record' => 1]);
+                        return $query->where(['parent_id' => $this->parent_id]);
                     }
-                )
+                )->whereNull('deleted_at')
             ],
             'parent_id' => [
                 'nullable',
-                // exists among test_categories_id and active records
-                Rule::exists('test_categories', 'id')->where(
-                /**
-                 * @psalm-suppress MissingClosureReturnType
-                 * @psalm-suppress MissingClosureParamType
-                 */
-                    function ($query) {
-                        return $query->where('active_record', 1);
-                    }
-                )
+                'exists:test_categories,id,deleted_at,NULL'
             ],
             'user_email' => 'nullable|string|email|max:255|exists:users,email',
         ];

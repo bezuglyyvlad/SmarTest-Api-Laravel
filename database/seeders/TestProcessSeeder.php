@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Http\Controllers\Api\V1\TestController;
-use App\Http\Requests\TestStoreRequest;
 use App\Models\Answer;
 use App\Models\Test;
 use App\Models\User;
@@ -26,13 +24,15 @@ class TestProcessSeeder extends Seeder
      */
     public function run()
     {
+        srand(1);
+
         $countOfUsers = User::count();
         for ($j = 1; $j <= $countOfUsers; $j++) {
             // login
             $user = User::findOrFail($j);
 
-            // $countOfTests = rand(1, 3);
-            $countOfTests = 1;
+            $countOfTests = rand(1, 2);
+            //$countOfTests = 1;
 
             for ($i = 0; $i < $countOfTests; $i++) {
                 // disable rate limit

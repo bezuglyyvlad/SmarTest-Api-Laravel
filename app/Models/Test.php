@@ -18,7 +18,7 @@ class Test extends Model
     use HasFactory;
 
     public $timestamps = false;
-    public const MAX_CORRECTION_COEF = 100 / 109.99;
+    public const MAX_CORRECTION_COEF = 100 / (100 + Question::BASIC_POINTS * Question::UPPER_LIMIT_QUALITY_COEF);
 
     /**
      * @return BelongsTo
@@ -75,7 +75,7 @@ class Test extends Model
             })->pluck('id');
     }
 
-    public static function validateNobodyPassesExpertTest($errorCondition): bool
+    public static function validateNobodyPassesExpertTest(bool $errorCondition): bool
     {
         if ($errorCondition) {
             throw ValidationException::withMessages([

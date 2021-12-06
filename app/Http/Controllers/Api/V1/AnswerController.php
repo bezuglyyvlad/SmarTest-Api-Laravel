@@ -13,7 +13,10 @@ use App\Models\Answer;
 use App\Models\ExpertTest;
 use App\Models\Question;
 use App\Models\Test;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,9 +27,9 @@ class AnswerController extends Controller
      * Display a listing of the resource.
      *
      * @param AnswerIndexRequest $request
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return AnonymousResourceCollection
      */
-    public function index(AnswerIndexRequest $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+    public function index(AnswerIndexRequest $request): AnonymousResourceCollection
     {
         $question_id = $request->validated()['question_id'];
         return PrivateAnswerResource::collection(
@@ -42,7 +45,7 @@ class AnswerController extends Controller
      *
      * @param AnswerStoreRequest $request
      * @return PrivateAnswerResource
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(AnswerStoreRequest $request): PrivateAnswerResource
     {
@@ -63,7 +66,7 @@ class AnswerController extends Controller
      * @param AnswerUpdateRequest $request
      * @param Answer $answer
      * @return PrivateAnswerResource
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function update(AnswerUpdateRequest $request, Answer $answer): PrivateAnswerResource
     {
@@ -97,8 +100,8 @@ class AnswerController extends Controller
      *
      * @param AnswerDestroyRequest $request
      * @param Answer $answer
-     * @return \Illuminate\Http\Response
-     * @throws \Illuminate\Validation\ValidationException
+     * @return Application|ResponseFactory|\Illuminate\Http\Response
+     * @throws ValidationException
      */
     public function destroy(AnswerDestroyRequest $request, Answer $answer)
     {

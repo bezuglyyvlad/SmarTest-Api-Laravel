@@ -10,10 +10,12 @@ use App\Http\Resources\AnswerResource;
 use App\Http\Resources\PrivateAnswerResource;
 use App\Http\Resources\PrivateTestResultResource;
 use App\Http\Resources\TestCollection;
+use App\Http\Resources\TestControllerResultResource;
 use App\Http\Resources\TestResource;
 use App\Http\Resources\TestResultResource;
 use App\Models\Question;
 use App\Models\Test;
+use App\Models\TestResult;
 use Carbon\Carbon;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
@@ -51,17 +53,25 @@ class TestController extends Controller
     public function store(TestStoreRequest $request): array
     {
         $expert_test_id = $request->validated()['expert_test_id'];
-        DB::transaction(function () use ($expert_test_id) {
+
+        DB::beginTransaction();
+        try {
             $newTest = TestHelper::startNewTest($expert_test_id);
             $coefRange = Question::selectCoefRange(0);
             ['test_result' => $newQuestion, 'answers' => $answers] =
-                TestHelper::generateNewQuestion($expert_test_id, $newTest->id, 1, $coefRange);
-            return [
-                'test' => new TestResource($newTest),
-                'question' => new TestResultResource($newQuestion),
-                'answers' => AnswerResource::collection($answers)
-            ];
-        });
+                TestHelper::generateNewQuestion($expert_test_id, $newTest, 1, $coefRange);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        return [
+            'test' => new TestResource($newTest),
+            'question' => new TestResultResource($newQuestion),
+            'answers' => AnswerResource::collection($answers)
+        ];
     }
 
     /**
@@ -128,7 +138,12 @@ class TestController extends Controller
     {
         $test_id = $request->test_id;
         $userAnswer = $request->answer;
-        DB::transaction(function () use ($test_id, $userAnswer) {
+
+        $newQuestion = null;
+        $newAnswers = null;
+
+        DB::beginTransaction();
+        try {
             ['test_tesult' => $test_result, 'lastQuestion' => $lastQuestion, 'answers' => $answers] =
                 TestHelper::getLastQuestionAndAnswers($test_id);
             $test = Test::where('id', $test_id)->first();
@@ -138,14 +153,21 @@ class TestController extends Controller
                 $coefRange = Question::selectCoefRange($test->score);
                 ['test_result' => $newQuestion, 'answers' => $newAnswers] = TestHelper::generateNewQuestion(
                     $test->expert_test_id,
-                    $test_id,
+                    $test,
                     $test_result->serial_number + 1,
                     $coefRange
                 );
-                return ['question' => new TestResultResource($newQuestion), 'answers' => AnswerResource::collection($newAnswers)];
             }
-            return [];
-        });
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+
+        if ($newQuestion && $newAnswers) {
+            return ['question' => new TestResultResource($newQuestion), 'answers' => AnswerResource::collection($newAnswers)];
+        }
+        return [];
     }
 
     /**
@@ -158,11 +180,12 @@ class TestController extends Controller
             ->with('expert_test', 'test_category')
             ->first();
         if ($test && $test->testIsFinished()) {
-            ['questions' => $questions, 'answers' => $answers] = TestHelper::getTestComponentsForResult($test->id);
             return [
                 'test' => new TestResource($test),
-                'questions' => PrivateTestResultResource::collection($questions),
-                'answers' => PrivateAnswerResource::collection($answers)->collection->groupBy('question_id'),
+                'questions' => TestControllerResultResource::collection(
+                    TestResult::where('test_id', $test->id)->with('question')
+                        ->get()
+                )
             ];
         } else {
             return response(['message' => "Forbidden"], Response::HTTP_FORBIDDEN);

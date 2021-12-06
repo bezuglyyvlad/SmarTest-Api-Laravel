@@ -34,8 +34,7 @@ class TestCategoryStoreRequest extends FormRequest
         return [
             'title.unique' => 'Ця назва вже зайнята.',
             'user_email.exists' =>
-                'Вибрана електронна
-                адреса користувача недійсна.'
+                'Вибрана електронна адреса користувача недійсна.'
         ];
     }
 

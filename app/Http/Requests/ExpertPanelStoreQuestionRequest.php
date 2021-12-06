@@ -45,7 +45,7 @@ class ExpertPanelStoreQuestionRequest extends FormRequest
                 'required',
                 'exists:expert_tests,id,deleted_at,NULL'
             ],
-            'answers' => ['required', 'array', 'min:2'],
+            'answers' => ['required', 'array', 'min:2', 'max:20'],
             'answers.*.text' => ['required', 'string', 'max:5000', 'distinct'],
             'answers.*.is_correct' => ['required', 'boolean']
         ];

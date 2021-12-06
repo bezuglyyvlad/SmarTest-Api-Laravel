@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         Artisan::call('passport:install');
-        User::factory(500)->create();
+        User::factory(100)->create();
         $this->call([
             SpatieSeeder::class,
             TestCategoriesTableSeeder::class,

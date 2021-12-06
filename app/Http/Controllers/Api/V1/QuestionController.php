@@ -59,7 +59,7 @@ class QuestionController extends Controller
         ExpertTest::findOrFail($question->expert_test_id)->validateExpertTestNotPublished();
         Test::validateNobodyPassesExpertTest($activeTestIds->count() > 0);
 
-        $newQuestion->quality_coef = $newQuestion->getQualityCoefByFuzzyLogic();
+        $newQuestion->quality_coef = Question::getQualityCoefByFuzzyLogic($newQuestion->toArray());
 
         DB::transaction(function () use ($question, $newQuestion) {
             self::updateRecord($question, $newQuestion);
@@ -150,7 +150,13 @@ class QuestionController extends Controller
         return new PrivateQuestionResource($newQuestion);
     }
 
-    private static function updateRecord($oldQuestion, $newQuestion)
+    /**
+     * @param Question $oldQuestion
+     * @param Question $newQuestion
+     * @return void
+     * @throws \Exception
+     */
+    private static function updateRecord(Question $oldQuestion, Question $newQuestion): void
     {
         $oldQuestion->delete();
 

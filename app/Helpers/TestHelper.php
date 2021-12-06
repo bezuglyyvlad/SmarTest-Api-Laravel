@@ -3,6 +3,7 @@
 
 namespace App\Helpers;
 
+use App\Http\Resources\PrivateAnswerResource;
 use App\Models\Answer;
 use App\Models\ExpertTest;
 use App\Models\Question;
@@ -35,9 +36,7 @@ class TestHelper
      */
     public static function getAnswerIds(Collection $testResult): Collection
     {
-        return $testResult->pluck('answer_ids')->map(function (string $item): array {
-            return json_decode($item);
-        })->collapse();
+        return $testResult->pluck('answer_ids')->collapse();
     }
 
     /**
@@ -90,14 +89,17 @@ class TestHelper
             0;
         $testResult->user_answer = json_encode($validUserAnswer);
         $testResult->is_correct_answer = $poinst === $testResult->score;
+
+        // change scale from max to 100
         $testResult->score = $testResult->score * Test::MAX_CORRECTION_COEF;
-        $testResult->max_score = $poinst * Test::MAX_CORRECTION_COEF;
+        //$testResult->max_score = $poinst * Test::MAX_CORRECTION_COEF;
         $testResult->save();
 
         // update test score
-        $test->max_score += $poinst;
+        //$test->max_score += $poinst;
         $test->score += $testResult->score;
         if ($test->max_score >= 100) {
+            // change scale from 100 to value $test->max_score
             $test->score = ($test->score / Test::MAX_CORRECTION_COEF) * 100 / $test->max_score;
             TestResult::where('test_id', $test->id)->get()->each(function (TestResult $item) use ($test) {
                 $item->score = ($item->score / Test::MAX_CORRECTION_COEF) * 100 / $test->max_score;
@@ -136,21 +138,33 @@ class TestHelper
      */
     public static function generateNewQuestion(
         int   $expertTestId,
-        int   $testId,
+        Test  $test,
         int   $serialNumber,
         array $coefRange
     ): array {
-        $question = self::selectNewQuestion($coefRange, $expertTestId, $testId);
+        $question = self::selectNewQuestion($coefRange, $expertTestId, $test->id);
+
+        // by default scale is max
+        $poinst = $question->quality_coef * Question::BASIC_POINTS;
+
         $answers = Answer::select(['id', 'text'])
             ->where(['question_id' => $question->id])
             ->get()->shuffle();
         $testResult = new TestResult();
         $testResult->serial_number = $serialNumber;
+
+        // change scale from max to 100
+        $testResult->max_score = $poinst * Test::MAX_CORRECTION_COEF;
         $testResult->answer_ids = $answers->pluck('id')->toJson();
-        $testResult->test_id = $testId;
+        $testResult->test_id = $test->id;
         $testResult->question_id = $question->id;
         $testResult->save();
         $testResult->load('question');
+
+        // save max_score for test in max scale
+        $test->max_score += $poinst;
+        $test->save();
+
         return ['test_result' => $testResult, 'answers' => $answers];
     }
 
@@ -170,22 +184,6 @@ class TestHelper
 
         $newTest->save();
         return $newTest;
-    }
-
-    /**
-     * @param int $testId
-     * @return array
-     */
-    public static function getTestComponentsForResult(int $testId): array
-    {
-        $questions = TestResult::where('test_id', $testId)->with('question')
-            ->get();
-        $answer_ids = self::getAnswerIds($questions);
-        $answers = Answer::withTrashed()->select(['id', 'text', 'is_correct', 'question_id'])
-            ->whereIn('id', $answer_ids)
-            ->get();
-
-        return ['questions' => $questions, 'answers' => $answers];
     }
 
     /**

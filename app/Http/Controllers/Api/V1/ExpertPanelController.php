@@ -20,6 +20,7 @@ use App\Models\ExpertTest;
 use App\Models\Question;
 use App\Models\Test;
 use App\Models\TestCategory;
+use App\Models\TestResult;
 use Illuminate\Database\Eloquent\Collection as CollectionAlias;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -34,19 +35,22 @@ use Symfony\Component\Process\Process;
 class ExpertPanelController extends Controller
 {
     /**
-     * Display a listing of the basic test categories.
+     * Display a listing of the basic test categories for expert
      *
      * @param Request $request
-     * @return AnonymousResourceCollection
+     * @return TestCategory[]|\Illuminate\Database\Eloquent\Builder[]|CollectionAlias|AnonymousResourceCollection
      */
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request)
     {
+        $expertTestCategories = TestCategory::where('user_id', Auth::id())->get();
+        $expertTestCategoriesId = $expertTestCategories->pluck('id')->toArray();
+
         return TestCategoryResource::collection(
-            TestCategory::where(
-                [
-                    'user_id' => Auth::id()
-                ]
-            )->whereNull(['parent_id'])->orderByDesc('updated_at')->get()
+            $expertTestCategories->filter(
+                function (TestCategory $value) use ($expertTestCategoriesId) {
+                    return !in_array($value->parent_id, $expertTestCategoriesId);
+                }
+            )->values()
         );
     }
 
@@ -154,7 +158,7 @@ class ExpertPanelController extends Controller
                 ->sortByDesc('score')
                 ->unique('user_email')
                 ->sortKeys();
-            $splitCount = intdiv($dataMining->count(), 250);
+            $splitCount = $dataMining->count() > 250 ? intdiv($dataMining->count(), 250) : 1;
             $dataMining = $dataMining
                 ->split($splitCount)
                 ->map(function (Collection $item) {
@@ -218,12 +222,16 @@ class ExpertPanelController extends Controller
 
         $question = new Question();
         $question->fill($validatedData);
-        $question->quality_coef = $question->getQualityCoefByFuzzyLogic();
+
+        $question->quality_coef = Question::getQualityCoefByFuzzyLogic($question->toArray());
 
         $answers = $validatedData['answers'];
 
-        $imageFileName = Image::saveImage('question', $request->file('image'));
-        $question->image = $imageFileName;
+        $imageFileName = null;
+        if ($request->file('image')) {
+            $imageFileName = Image::saveImage('question', $request->file('image'));
+            $question->image = $imageFileName;
+        }
 
         self::saveQuestionWithAnswers($question, $answers, $imageFileName);
 
@@ -257,7 +265,7 @@ class ExpertPanelController extends Controller
             $questions = [$questions];
         }
 
-        $questionStoreRules = (new ExpertPanelStoreQuestionRequest)->rules();
+        $questionStoreRules = (new ExpertPanelStoreQuestionRequest())->rules();
         DB::transaction(function () use ($questions, $request, $questionStoreRules) {
             foreach ($questions as $item) {
                 $item['expert_test_id'] = $request->expert_test_id;
@@ -267,7 +275,7 @@ class ExpertPanelController extends Controller
                 // save question with answers
                 $question = new Question();
                 $question->fill($item);
-                $question->quality_coef = $question->getQualityCoefByFuzzyLogic();
+                $question->quality_coef = Question::getQualityCoefByFuzzyLogic($question->toArray());
 
                 $answers = $item['answers'];
 
@@ -286,6 +294,11 @@ class ExpertPanelController extends Controller
         );
     }
 
+    /**
+     * @param ExpertPanelGetByExpertTestRequest $request
+     * @param ExpertTest $expertTest
+     * @return mixed
+     */
     public function exportQuestions(ExpertPanelGetByExpertTestRequest $request, ExpertTest $expertTest)
     {
         $questionsWithAnswers = json_decode(
@@ -331,7 +344,7 @@ class ExpertPanelController extends Controller
         ];
     }
 
-    private static function saveQuestionWithAnswers($question, $answers, $imageFileName = null)
+    private static function saveQuestionWithAnswers(Question $question, array $answers, string $imageFileName = null)
     {
         DB::transaction(function () use ($question, $answers, $imageFileName) {
             try {
@@ -369,7 +382,7 @@ class ExpertPanelController extends Controller
             throw ValidationException::withMessages([
                 'importFile' => ['Відсутній атрибут question в XML файлі']
             ]);
-        } else if (count($data['question']) > 300) {
+        } elseif (count($data['question']) > 300) {
             throw ValidationException::withMessages([
                 'importFile' => ['Неможливо імпортувати більше ніж 300 питань']
             ]);

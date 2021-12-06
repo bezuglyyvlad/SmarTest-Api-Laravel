@@ -16,7 +16,7 @@ class PrivateExportQuestionResource extends JsonResource
     {
         return [
             'text' => $this->text,
-            'description' => $this->description,
+            'description' => $this->when(!is_null($this->description), $this->description),
             'complexity' => $this->complexity,
             'significance' => $this->significance,
             'relevance' => $this->relevance,

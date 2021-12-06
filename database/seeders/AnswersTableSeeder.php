@@ -2,9 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Question;
 use Carbon\Carbon;
-use Faker\Factory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -417,7 +415,7 @@ class AnswersTableSeeder extends Seeder
                 'question_id' => 19,
             ],
             [
-                'text' => "Об'єкту user.",
+                'text' => "Об`єкту user.",
                 'is_correct' => 0,
                 'question_id' => 19,
             ],

@@ -74,10 +74,13 @@ class Question extends Model
      */
     public static function selectCoefRange(float $score): array
     {
+        // change scale from 100 to max
+        $correctionScore = $score / Test::MAX_CORRECTION_COEF;
+
         $coefRange = [self::LOWER_EASY_QUESTION_COEF, self::UPPER_EASY_QUESTION_COEF];
-        if ($score >= 64 && $score < 82) {
+        if ($correctionScore >= 64 && $correctionScore < 82) {
             $coefRange = [self::LOWER_MED_QUESTION_COEF, self::UPPER_MED_QUESTION_COEF];
-        } elseif ($score >= 82) {
+        } elseif ($correctionScore >= 82) {
             $coefRange = [self::LOWER_HARD_QUESTION_COEF, self::UPPER_HARD_QUESTION_COEF];
         }
         return $coefRange;
@@ -92,14 +95,15 @@ class Question extends Model
     }
 
     /**
+     * @param array $question
      * @return float
      */
-    public function getQualityCoefByFuzzyLogic(): float
+    public static function getQualityCoefByFuzzyLogic(array $question): float
     {
         $criteriaArray = [
-            'complexity' => $this->complexity,
-            'significance' => $this->significance,
-            'relevance' => $this->relevance
+            'complexity' => $question['complexity'],
+            'significance' => $question['significance'],
+            'relevance' => $question['relevance']
         ];
 
         $similarQuestion = Question::where($criteriaArray)->first();
@@ -107,7 +111,7 @@ class Question extends Model
 
         if (!$qualityCoef) {
             $process = new Process(
-                ['python', 'PythonScripts/fuzzyLogic.py'],
+                ['python', public_path() . '/PythonScripts/fuzzyLogic.py'],
                 null,
                 $criteriaArray
             );

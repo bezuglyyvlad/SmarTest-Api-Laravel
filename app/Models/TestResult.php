@@ -22,4 +22,14 @@ class TestResult extends Model
     {
         return $this->belongsTo(Question::class)->withTrashed();
     }
+
+    public function getUserAnswerAttribute($value)
+    {
+        return json_decode($value);
+    }
+
+    public function getAnswerIdsAttribute($value)
+    {
+        return json_decode($value);
+    }
 }

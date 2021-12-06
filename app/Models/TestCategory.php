@@ -68,7 +68,11 @@ class TestCategory extends Model
         return $this->belongsTo(User::class);
     }
 
-    public static function getHistoryRecordIds(int $testCategoryId)
+    /**
+     * @param int $testCategoryId
+     * @return array
+     */
+    public static function getHistoryRecordIds(int $testCategoryId): array
     {
         return TestCategory
             ::setParentKeyName('modified_records_parent_id')

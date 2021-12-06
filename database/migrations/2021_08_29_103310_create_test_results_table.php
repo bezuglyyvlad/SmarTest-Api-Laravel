@@ -20,7 +20,7 @@ class CreateTestResultsTable extends Migration
             $table->boolean('is_correct_answer')->default(false);
             $table->float('score', 7, 4)->default(0);
             $table->float('max_score', 7, 4)->default(0);
-            $table->json('user_answer')->nullable();
+            $table->json('user_answer')->default("[]");
             $table->json('answer_ids');
 
             $table->foreignId('test_id')->constrained()

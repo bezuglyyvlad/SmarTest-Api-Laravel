@@ -22,6 +22,13 @@ class AnswerUpdateRequest extends FormRequest
         return User::isExpert($expertTest->test_category_id);
     }
 
+    public function messages(): array
+    {
+        return [
+            'text.unique' => 'Вже є відповідь з таким текстом.'
+        ];
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

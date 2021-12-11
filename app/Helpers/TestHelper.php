@@ -73,9 +73,9 @@ class TestHelper
         Question   $lastQuestion,
         Test       $test
     ): bool {
-        // save user answer
+        // check user answer
         $validUserAnswer = array_values(array_intersect($answers->pluck('id')->toArray(), $userAnswer));
-        $countOfIncorrectUserAnswer = array_intersect(
+        $incorrectUserAnswers = array_intersect(
             $answers->where('is_correct', 0)->pluck('id')->toArray(),
             $validUserAnswer
         );
@@ -84,7 +84,7 @@ class TestHelper
         $poinst = $lastQuestion->quality_coef * Question::BASIC_POINTS;
         $correctAnswerIds = $answers->where('is_correct', 1)->pluck('id');
 
-        $testResult->score = $correctAnswerIds->count() !== 0 && count($countOfIncorrectUserAnswer) === 0 ?
+        $testResult->score = $correctAnswerIds->count() !== 0 && count($incorrectUserAnswers) === 0 ?
             $poinst * count($validUserAnswer) / $correctAnswerIds->count() :
             0;
         $testResult->user_answer = json_encode($validUserAnswer);
@@ -131,7 +131,7 @@ class TestHelper
 
     /**
      * @param int $expertTestId
-     * @param int $testId
+     * @param Test $test
      * @param int $serialNumber
      * @param array $coefRange
      * @return array
